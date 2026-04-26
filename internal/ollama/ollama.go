@@ -9,11 +9,19 @@ import (
 	"github.com/J4NN0/mycel/internal/logger"
 )
 
-type Ollama struct {
+type Checker interface {
+	Ensure(model string) error
+}
+
+type ollama struct {
 	log logger.Logger
 }
 
-func (o *Ollama) Ensure(model string) error {
+func NewChecker(log logger.Logger) Checker {
+	return &ollama{log: log}
+}
+
+func (o *ollama) Ensure(model string) error {
 	if err := o.ensureServing(); err != nil {
 		return fmt.Errorf("failed to start ollama: %w", err)
 	}
@@ -23,7 +31,7 @@ func (o *Ollama) Ensure(model string) error {
 	return nil
 }
 
-func (o *Ollama) ensureServing() error {
+func (o *ollama) ensureServing() error {
 	check := exec.Command("ollama", "list")
 	if err := check.Run(); err == nil {
 		o.log.Printf("Ollama already running")
@@ -41,7 +49,7 @@ func (o *Ollama) ensureServing() error {
 	return nil
 }
 
-func (o *Ollama) ensureModelPulled(model string) error {
+func (o *ollama) ensureModelPulled(model string) error {
 	o.log.Printf("Pulling model %q ...\n", model)
 
 	cmd := exec.Command("ollama", "pull", model)

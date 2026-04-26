@@ -16,22 +16,19 @@ type Provider interface {
 	Shutdown()
 }
 
-type LLM struct {
+type llm struct {
 	log      logger.Logger
 	provider schemas.ModelProvider
 	bifrost  *bifrost.Bifrost
+	model    string
 }
 
-func NewProvider(log logger.Logger, config config.Config, ollama *ollama.Ollama) (Provider, error) {
+func NewProvider(log logger.Logger, config config.Config, ollamaChecker ollama.Checker) (Provider, error) {
 	pc := &providerConfig{
 		config: config,
 	}
 	if pc.config.Provider == schemas.Ollama {
-		if ollama == nil {
-			return nil, fmt.Errorf("ollama config cannot be nil when provider is set to ollama")
-		}
-
-		err := ollama.Ensure("llama3.1:latest")
+		err := ollamaChecker.Ensure(config.LlmModel)
 		if err != nil {
 			return nil, fmt.Errorf("failed to ensure llama provider: %w", err)
 		}
@@ -44,13 +41,14 @@ func NewProvider(log logger.Logger, config config.Config, ollama *ollama.Ollama)
 		return nil, fmt.Errorf("failed to initialize bifrost client: %w", err)
 	}
 
-	return &LLM{
+	return &llm{
 		log:      log,
 		provider: config.Provider,
 		bifrost:  bifrostClient,
+		model:    config.LlmModel,
 	}, nil
 }
 
-func (l *LLM) Shutdown() {
+func (l *llm) Shutdown() {
 	l.bifrost.Shutdown()
 }

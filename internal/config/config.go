@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Provider schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
+	LlmModel string                `envconfig:"LLM_MODEL" required:"true"`
 }
 
 func ReadConfig() (Config, error) {

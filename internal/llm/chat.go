@@ -7,7 +7,7 @@ import (
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
-func (l *LLM) Chat(ctx context.Context, msg string) (string, error) {
+func (l *llm) Chat(ctx context.Context, msg string) (string, error) {
 	messages := []schemas.ChatMessage{
 		{
 			Role: schemas.ChatMessageRoleUser,
@@ -19,7 +19,7 @@ func (l *LLM) Chat(ctx context.Context, msg string) (string, error) {
 
 	response, err := l.bifrost.ChatCompletionRequest(schemas.NewBifrostContext(ctx, schemas.NoDeadline), &schemas.BifrostChatRequest{
 		Provider: l.provider,
-		Model:    "llama3.1:latest",
+		Model:    l.model,
 		Input:    messages,
 	})
 	if err != nil {

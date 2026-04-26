@@ -20,7 +20,13 @@ func (p *providerConfig) GetConfiguredProviders() ([]schemas.ModelProvider, erro
 func (p *providerConfig) GetKeysForProvider(ctx context.Context, providerKey schemas.ModelProvider) ([]schemas.Key, error) {
 	if providerKey == schemas.Ollama {
 		return []schemas.Key{{
-			Value:  schemas.EnvVar{},
+			Value: schemas.EnvVar{Val: "ollama", FromEnv: false},
+			OllamaKeyConfig: &schemas.OllamaKeyConfig{
+				URL: schemas.EnvVar{
+					Val:     "http://localhost:11434",
+					FromEnv: false,
+				},
+			},
 			Models: schemas.WhiteList{"*"},
 			Weight: 1.0,
 		}}, nil

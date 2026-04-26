@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/J4NN0/mycel/internal/ollama"
 
 	"github.com/J4NN0/mycel/internal/config"
 	"github.com/J4NN0/mycel/internal/llm"
@@ -20,7 +21,9 @@ func main() {
 		return
 	}
 
-	provider, err := llm.NewProvider(log, appConfig)
+	ollamaChecker := ollama.NewChecker(log)
+
+	provider, err := llm.NewProvider(log, appConfig, ollamaChecker)
 	if err != nil {
 		log.Fatalf("provider initilization failed: %v", err)
 		return
