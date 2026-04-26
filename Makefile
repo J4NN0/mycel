@@ -1,0 +1,37 @@
+# === CONFIG =======================================================
+PROJECT_NAME="mycel"
+COVER_PROFILE="build/cover.out"
+
+# Build
+build:
+	@echo "---> Building $(PROJECT_NAME)"
+	go build -o build/$(PROJECT_NAME) cmd/$(PROJECT_NAME)/main.go
+.PHONY: build
+
+# === TOOLS =======================================================
+# Fix go.mod and go.sum
+mod-tidy:
+	@echo "---> Checking module requirements"
+	go mod tidy
+.PHONY: mod-tidy
+
+# Format go code
+fmt:
+	@echo "---> Formatting code"
+	go fmt ./...
+.PHONY: fmt
+
+# Examine Go source code and reports suspicious constructs
+vet:
+	@echo "---> Checking Go source code"
+	go vet ./...
+.PHONY: vet
+
+# Run application using linters: it runs linters in parallel, uses caching, supports yaml config, etc.
+lint:
+	@echo "---> Running linter"
+	golangci-lint run ./... --timeout=3m
+.PHONY: lint
+
+# === DEVELOPMENT =======================================================
+pre-commit: mod-tidy fmt build lint vet

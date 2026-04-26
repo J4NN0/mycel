@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/J4NN0/mycel/internal/ollama"
 
 	"github.com/J4NN0/mycel/internal/config"
 	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
+	"github.com/J4NN0/mycel/internal/ollama"
 )
 
 const appName = "Mycel"
@@ -35,5 +35,5 @@ func main() {
 		log.Fatalf("chat message failed: %v", err)
 		return
 	}
-	log.Printf(response)
+	log.Printf("Response; %s", response)
 }
