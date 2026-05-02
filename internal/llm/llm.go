@@ -12,7 +12,7 @@ import (
 )
 
 type Provider interface {
-	Chat(ctx context.Context, msg string) (string, error)
+	Chat(ctx context.Context, messages []Message) (string, error)
 	Shutdown()
 }
 

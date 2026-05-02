@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"os"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,10 +18,9 @@ type Log struct {
 }
 
 func New(name string) Logger {
-	return &Log{
-		name: name,
-		l:    logrus.New(),
-	}
+	l := logrus.New()
+	l.SetOutput(os.Stdout)
+	return &Log{name: name, l: l}
 }
 
 func (l *Log) Printf(fmt string, args ...interface{}) {

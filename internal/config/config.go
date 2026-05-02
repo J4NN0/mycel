@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	Provider schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
-	LlmModel string                `envconfig:"LLM_MODEL" required:"true"`
+	Provider         schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
+	LlmModel         string                `envconfig:"LLM_MODEL" required:"true"`
+	TelegramBotToken string                `envconfig:"TELEGRAM_BOT_TOKEN" required:"true"`
 }
 
 func ReadConfig() (Config, error) {
