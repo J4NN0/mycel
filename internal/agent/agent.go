@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/J4NN0/mycel/internal/llm"
+	"github.com/J4NN0/mycel/internal/logger"
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
@@ -18,24 +19,43 @@ type Platform interface {
 type MessageHandler func(ctx context.Context, sessionID, text string) (string, error)
 
 type Agent struct {
+	log       logger.Logger
 	provider  llm.Provider
 	persona   string
-	platform  Platform
+	platforms []Platform
 	mu        sync.Mutex
 	histories map[string][]llm.Message
 }
 
-func New(provider llm.Provider, persona string, platform Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, persona string, platforms ...Platform) *Agent {
 	return &Agent{
+		log:       log,
 		provider:  provider,
 		persona:   persona,
-		platform:  platform,
+		platforms: platforms,
 		histories: make(map[string][]llm.Message),
 	}
 }
 
 func (a *Agent) Run(ctx context.Context) error {
-	return a.platform.Run(ctx, a.reply)
+	errCh := make(chan error, len(a.platforms))
+	var wg sync.WaitGroup
+
+	for _, p := range a.platforms {
+		wg.Add(1)
+		go func(p Platform) {
+			defer wg.Done()
+			if err := p.Run(ctx, a.reply); err != nil {
+				a.log.Warningf("Platform %T failed: %v", p, err)
+				errCh <- err
+			}
+		}(p)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	return <-errCh
 }
 
 func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, error) {

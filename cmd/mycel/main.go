@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/J4NN0/mycel/internal/agent"
+	"github.com/J4NN0/mycel/internal/cli"
 	"github.com/J4NN0/mycel/internal/config"
 	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
@@ -43,6 +44,8 @@ func main() {
 		return
 	}
 
+	cli := cli.New(log)
+
 	promptManager := prompt.NewManager(promptsDir)
 	persona, err := promptManager.LoadPersona()
 	if err != nil {
@@ -50,7 +53,7 @@ func main() {
 		return
 	}
 
-	ag := agent.New(llmProvider, persona, bot)
+	ag := agent.New(log, llmProvider, persona, bot, cli)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)

@@ -30,6 +30,8 @@ func NewBot(token string, log logger.Logger) (*Bot, error) {
 		return nil, fmt.Errorf("failed to register bot commands: %w", err)
 	}
 
+	log.Printf("Telegram bot @%s ready", api.Self.UserName)
+
 	return &Bot{api: api, log: log}, nil
 }
 
@@ -38,8 +40,6 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 	u.Timeout = 60
 
 	updates := b.api.GetUpdatesChan(u)
-
-	b.log.Printf("Running telegram bot @%s", b.api.Self.UserName)
 
 	for {
 		select {
