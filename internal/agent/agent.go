@@ -39,6 +39,11 @@ func (a *Agent) Run(ctx context.Context) error {
 }
 
 func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, error) {
+	response, isCmd := a.handleCommand(sessionID, text)
+	if isCmd {
+		return response, nil
+	}
+
 	a.mu.Lock()
 	messages := a.loadHistory(sessionID)
 	a.mu.Unlock()
@@ -73,4 +78,10 @@ func (a *Agent) storeHistory(sessionID, text, response string) {
 		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response},
 	)
+}
+
+func (a *Agent) clearHistory(sessionID string) {
+	a.mu.Lock()
+	delete(a.histories, sessionID)
+	a.mu.Unlock()
 }

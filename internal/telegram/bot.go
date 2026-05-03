@@ -20,6 +20,16 @@ func NewBot(token string, log logger.Logger) (*Bot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create telegram bot: %w", err)
 	}
+
+	botCommands := make([]tgbotapi.BotCommand, len(agent.Commands))
+	for i, c := range agent.Commands {
+		botCommands[i] = tgbotapi.BotCommand{Command: c.Name, Description: c.Description}
+	}
+	_, err = api.Request(tgbotapi.NewSetMyCommands(botCommands...))
+	if err != nil {
+		return nil, fmt.Errorf("failed to register bot commands: %w", err)
+	}
+
 	return &Bot{api: api, log: log}, nil
 }
 
@@ -60,7 +70,9 @@ func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler 
 
 	b.log.Printf("[%s] Replying to %s: %s", sessionID, msg.From.UserName, response)
 	reply := tgbotapi.NewMessage(msg.Chat.ID, response)
-	reply.ReplyToMessageID = msg.MessageID
+	if !msg.IsCommand() {
+		reply.ReplyToMessageID = msg.MessageID
+	}
 
 	_, err = b.api.Send(reply)
 	if err != nil {
