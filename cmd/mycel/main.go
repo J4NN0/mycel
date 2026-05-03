@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -23,13 +25,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	log := logger.New(appName)
-
 	appConfig, err := config.ReadConfig()
 	if err != nil {
-		log.Fatalf("config reading failed: %v", err)
-		return
+		fmt.Fprintf(os.Stderr, "config reading failed: %v\n", err)
+		os.Exit(1)
 	}
+
+	log := logger.New(appName, appConfig.LogLevel)
 
 	llmProvider, err := llm.NewProvider(log, appConfig)
 	if err != nil {
@@ -44,7 +46,7 @@ func main() {
 		return
 	}
 
-	cli := cli.New(log)
+	cliChat := cli.New(log)
 
 	promptManager := prompt.NewManager(promptsDir)
 	persona, err := promptManager.LoadPersona()
@@ -53,7 +55,7 @@ func main() {
 		return
 	}
 
-	ag := agent.New(log, llmProvider, persona, bot, cli)
+	ag := agent.New(log, llmProvider, persona, bot, cliChat)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)

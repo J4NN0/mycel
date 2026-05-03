@@ -46,7 +46,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		go func(p Platform) {
 			defer wg.Done()
 			if err := p.Run(ctx, a.reply); err != nil {
-				a.log.Warningf("Platform %T failed: %v", p, err)
+				a.log.Errorf("Platform %T failed: %v", p, err)
 				errCh <- err
 			}
 		}(p)
@@ -64,25 +64,23 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 		return response, nil
 	}
 
-	a.mu.Lock()
 	messages := a.loadHistory(sessionID)
-	a.mu.Unlock()
-
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
 
+	a.log.Debugf("[%s] Generating response ...", sessionID)
 	response, err := a.provider.Chat(ctx, messages)
 	if err != nil {
 		return "", fmt.Errorf("agent reply: %w", err)
 	}
 
-	a.mu.Lock()
 	a.storeHistory(sessionID, text, response)
-	a.mu.Unlock()
 
 	return response, nil
 }
 
 func (a *Agent) loadHistory(sessionID string) []llm.Message {
+	a.mu.Lock()
+
 	if len(a.histories[sessionID]) == 0 {
 		a.histories[sessionID] = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: a.persona}}
 	}
@@ -90,18 +88,24 @@ func (a *Agent) loadHistory(sessionID string) []llm.Message {
 	messages := make([]llm.Message, len(a.histories[sessionID]))
 	copy(messages, a.histories[sessionID])
 
+	a.log.Debugf("[%s] History loaded: %d messages", sessionID, len(messages))
+	a.mu.Unlock()
+
 	return messages
 }
 
 func (a *Agent) storeHistory(sessionID, text, response string) {
+	a.mu.Lock()
 	a.histories[sessionID] = append(a.histories[sessionID],
 		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response},
 	)
+	a.mu.Unlock()
 }
 
 func (a *Agent) clearHistory(sessionID string) {
 	a.mu.Lock()
 	delete(a.histories, sessionID)
+	a.log.Debugf("[%s] History cleared", sessionID)
 	a.mu.Unlock()
 }

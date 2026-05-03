@@ -60,7 +60,7 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 
 func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler agent.MessageHandler) {
 	sessionID := fmt.Sprintf("%d", msg.Chat.ID)
-	b.log.Printf("[%s] New message from %s: %s", sessionID, msg.From.UserName, msg.Text)
+	b.log.Debugf("[%s] New message from %s: %s", sessionID, msg.From.UserName, msg.Text)
 
 	response, err := handler(ctx, sessionID, msg.Text)
 	if err != nil {
@@ -68,7 +68,7 @@ func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler 
 		return
 	}
 
-	b.log.Printf("[%s] Replying to %s: %s", sessionID, msg.From.UserName, response)
+	b.log.Debugf("[%s] Replying to %s: %s", sessionID, msg.From.UserName, response)
 	reply := tgbotapi.NewMessage(msg.Chat.ID, response)
 	if !msg.IsCommand() {
 		reply.ReplyToMessageID = msg.MessageID
