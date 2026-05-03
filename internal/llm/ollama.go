@@ -1,40 +1,25 @@
-package ollama
+package llm
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
 	"time"
-
-	"github.com/J4NN0/mycel/internal/logger"
 )
 
-type Checker interface {
-	Ensure(model string) error
-}
-
-type ollama struct {
-	log logger.Logger
-}
-
-func NewChecker(log logger.Logger) Checker {
-	return &ollama{log: log}
-}
-
-func (o *ollama) Ensure(model string) error {
-	if err := o.ensureServing(); err != nil {
+func ensureOllama(model string) error {
+	if err := ensureServing(); err != nil {
 		return fmt.Errorf("failed to start ollama: %w", err)
 	}
-	if err := o.ensureModelPulled(model); err != nil {
+	if err := ensureModelPulled(model); err != nil {
 		return fmt.Errorf("failed to pull model %q: %w", model, err)
 	}
 	return nil
 }
 
-func (o *ollama) ensureServing() error {
+func ensureServing() error {
 	check := exec.Command("ollama", "list")
 	if err := check.Run(); err == nil {
-		o.log.Printf("Ollama already running")
 		return nil
 	}
 
@@ -43,15 +28,12 @@ func (o *ollama) ensureServing() error {
 		return fmt.Errorf("could not start ollama serve: %w", err)
 	}
 
-	o.log.Printf("Ollama started")
 	time.Sleep(2 * time.Second)
 
 	return nil
 }
 
-func (o *ollama) ensureModelPulled(model string) error {
-	o.log.Printf("Pulling model %q ...\n", model)
-
+func ensureModelPulled(model string) error {
 	cmd := exec.Command("ollama", "pull", model)
 	cmd.Stdout = os.Stdout // stream pull progress to terminal
 	cmd.Stderr = os.Stderr

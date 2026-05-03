@@ -6,7 +6,6 @@ import (
 
 	"github.com/J4NN0/mycel/internal/config"
 	"github.com/J4NN0/mycel/internal/logger"
-	"github.com/J4NN0/mycel/internal/ollama"
 	"github.com/maximhq/bifrost/core"
 	"github.com/maximhq/bifrost/core/schemas"
 )
@@ -23,14 +22,14 @@ type llm struct {
 	model    string
 }
 
-func NewProvider(log logger.Logger, config config.Config, ollamaChecker ollama.Checker) (Provider, error) {
+func NewProvider(log logger.Logger, config config.Config) (Provider, error) {
 	pc := &providerConfig{
 		config: config,
 	}
 	if pc.config.Provider == schemas.Ollama {
-		err := ollamaChecker.Ensure(config.LlmModel)
+		err := ensureOllama(config.LlmModel)
 		if err != nil {
-			return nil, fmt.Errorf("failed to ensure llama provider: %w", err)
+			return nil, fmt.Errorf("failed to ensure ollama provider: %w", err)
 		}
 	}
 

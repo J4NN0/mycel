@@ -9,7 +9,6 @@ import (
 	"github.com/J4NN0/mycel/internal/config"
 	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
-	"github.com/J4NN0/mycel/internal/ollama"
 	"github.com/J4NN0/mycel/internal/prompt"
 	"github.com/J4NN0/mycel/internal/telegram"
 )
@@ -31,8 +30,7 @@ func main() {
 		return
 	}
 
-	ollamaChecker := ollama.NewChecker(log)
-	llmProvider, err := llm.NewProvider(log, appConfig, ollamaChecker)
+	llmProvider, err := llm.NewProvider(log, appConfig)
 	if err != nil {
 		log.Fatalf("provider initialization failed: %v", err)
 		return
