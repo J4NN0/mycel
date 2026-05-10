@@ -46,6 +46,7 @@ func main() {
 		log.Fatalf("redis initialization failed: %v", err)
 		return
 	}
+	defer redisClient.Close()
 
 	bot, err := telegram.NewBot(appConfig.TelegramBotToken, log)
 	if err != nil {

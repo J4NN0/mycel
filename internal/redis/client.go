@@ -20,3 +20,7 @@ func NewClient(ctx context.Context, addr string) (*Client, error) {
 	}
 	return &Client{rdb: rdb}, nil
 }
+
+func (c *Client) Close() error {
+	return c.rdb.Close()
+}
