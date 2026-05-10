@@ -13,6 +13,7 @@ import (
 	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
 	"github.com/J4NN0/mycel/internal/prompt"
+	"github.com/J4NN0/mycel/internal/redis"
 	"github.com/J4NN0/mycel/internal/telegram"
 )
 
@@ -27,7 +28,7 @@ func main() {
 
 	appConfig, err := config.ReadConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "config reading failed: %v\n", err)
+		fmt.Printf("Config reading failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -35,10 +36,16 @@ func main() {
 
 	llmProvider, err := llm.NewProvider(log, appConfig)
 	if err != nil {
-		log.Fatalf("provider initialization failed: %v", err)
+		log.Fatalf("llm provider initialization failed: %v", err)
 		return
 	}
 	defer llmProvider.Shutdown()
+
+	redisClient, err := redis.NewClient(ctx, appConfig.RedisAddr)
+	if err != nil {
+		log.Fatalf("redis initialization failed: %v", err)
+		return
+	}
 
 	bot, err := telegram.NewBot(appConfig.TelegramBotToken, log)
 	if err != nil {
@@ -55,7 +62,7 @@ func main() {
 		return
 	}
 
-	ag := agent.New(log, llmProvider, persona, bot, cliChat)
+	ag := agent.New(log, llmProvider, redisClient, persona, bot, cliChat)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)

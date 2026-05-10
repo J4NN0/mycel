@@ -9,6 +9,7 @@ type Config struct {
 	Provider         schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
 	LlmModel         string                `envconfig:"LLM_MODEL" required:"true"`
 	TelegramBotToken string                `envconfig:"TELEGRAM_BOT_TOKEN" required:"true"`
+	RedisAddr        string                `envconfig:"REDIS_ADDR" default:"localhost:6379"`
 	LogLevel         string                `envconfig:"LOG_LEVEL" default:"debug"`
 }
 

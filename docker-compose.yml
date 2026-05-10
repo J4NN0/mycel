@@ -1,0 +1,20 @@
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  app:
+    build: .
+    depends_on:
+      - redis
+    environment:
+      - PROVIDER=${PROVIDER}
+      - LLM_MODEL=${LLM_MODEL}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - REDIS_ADDR=redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+
+volumes:
+  redis_data:

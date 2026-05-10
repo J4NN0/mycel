@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -22,14 +23,18 @@ var Commands = []Command{
 	{Name: cmdClear, Description: "Reset the conversation history"},
 }
 
-func (a *Agent) handleCommand(sessionID, text string) (string, bool) {
+func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (string, bool) {
 	switch strings.TrimPrefix(text, "/") {
 	case cmdStart:
 		return "Hey, I'm Mycel. Drop me a message and let's talk.", true
 	case cmdHelp:
 		return buildHelp(), true
 	case cmdClear:
-		a.clearHistory(sessionID)
+		err := a.clearHistory(ctx, sessionID)
+		if err != nil {
+			a.log.Errorf("[%s] Failed to clear history: %v", sessionID, err)
+			return "Failed to clear conversation history.", true
+		}
 		return "Conversation history cleared.", true
 	}
 

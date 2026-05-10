@@ -7,6 +7,7 @@ import (
 
 	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
+	"github.com/J4NN0/mycel/internal/redis"
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
@@ -21,19 +22,18 @@ type MessageHandler func(ctx context.Context, sessionID, text string) (string, e
 type Agent struct {
 	log       logger.Logger
 	provider  llm.Provider
+	history   redis.History
 	persona   string
 	platforms []Platform
-	mu        sync.Mutex
-	histories map[string][]llm.Message
 }
 
-func New(log logger.Logger, provider llm.Provider, persona string, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.History, persona string, platforms ...Platform) *Agent {
 	return &Agent{
 		log:       log,
 		provider:  provider,
+		history:   history,
 		persona:   persona,
 		platforms: platforms,
-		histories: make(map[string][]llm.Message),
 	}
 }
 
@@ -46,7 +46,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		go func(p Platform) {
 			defer wg.Done()
 			if err := p.Run(ctx, a.reply); err != nil {
-				a.log.Errorf("Platform %T failed: %v", p, err)
+				a.log.Errorf("platform %T failed: %v", p, err)
 				errCh <- err
 			}
 		}(p)
@@ -59,53 +59,70 @@ func (a *Agent) Run(ctx context.Context) error {
 }
 
 func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, error) {
-	response, isCmd := a.handleCommand(sessionID, text)
+	response, isCmd := a.handleCommand(ctx, sessionID, text)
 	if isCmd {
 		return response, nil
 	}
 
-	messages := a.loadHistory(sessionID)
+	messages, err := a.loadHistory(ctx, sessionID)
+	if err != nil {
+		return "", err
+	}
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
 
 	a.log.Debugf("[%s] Generating response ...", sessionID)
-	response, err := a.provider.Chat(ctx, messages)
+	response, err = a.provider.Chat(ctx, messages)
 	if err != nil {
 		return "", fmt.Errorf("agent reply: %w", err)
 	}
 
-	a.storeHistory(sessionID, text, response)
+	err = a.storeHistory(ctx, sessionID, text, response)
+	if err != nil {
+		a.log.Errorf("[%s] Failed to store history: %v", sessionID, err)
+	}
 
 	return response, nil
 }
 
-func (a *Agent) loadHistory(sessionID string) []llm.Message {
-	a.mu.Lock()
-
-	if len(a.histories[sessionID]) == 0 {
-		a.histories[sessionID] = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: a.persona}}
+func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Message, error) {
+	messages, err := a.history.Load(ctx, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("load history: %w", err)
+	}
+	if len(messages) == 0 {
+		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: a.persona}}
+		err := a.history.Save(ctx, sessionID, messages)
+		if err != nil {
+			return nil, fmt.Errorf("seed history: %w", err)
+		}
 	}
 
-	messages := make([]llm.Message, len(a.histories[sessionID]))
-	copy(messages, a.histories[sessionID])
+	a.log.Debugf("[%s] History loaded: %d message(s)", sessionID, len(messages))
 
-	a.log.Debugf("[%s] History loaded: %d messages", sessionID, len(messages))
-	a.mu.Unlock()
-
-	return messages
+	return messages, nil
 }
 
-func (a *Agent) storeHistory(sessionID, text, response string) {
-	a.mu.Lock()
-	a.histories[sessionID] = append(a.histories[sessionID],
+func (a *Agent) storeHistory(ctx context.Context, sessionID, text, response string) error {
+	messages, err := a.history.Load(ctx, sessionID)
+	if err != nil {
+		return fmt.Errorf("load history: %w", err)
+	}
+
+	messages = append(messages,
 		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response},
 	)
-	a.mu.Unlock()
+
+	return a.history.Save(ctx, sessionID, messages)
 }
 
-func (a *Agent) clearHistory(sessionID string) {
-	a.mu.Lock()
-	delete(a.histories, sessionID)
+func (a *Agent) clearHistory(ctx context.Context, sessionID string) error {
+	err := a.history.Clear(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
 	a.log.Debugf("[%s] History cleared", sessionID)
-	a.mu.Unlock()
+
+	return nil
 }
