@@ -56,7 +56,7 @@ func main() {
 
 	cliChat := cli.New(log)
 
-	promptManager := prompt.NewManager(promptsDir)
+	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
 
 	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.MaxHistoryMessages, bot, cliChat)
 	err = ag.Run(ctx)

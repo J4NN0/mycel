@@ -7,27 +7,25 @@ import (
 )
 
 const (
-	personaDir    = "persona"
 	fileExtension = ".txt"
-)
 
-const (
 	compactPrompt = "Summarize the following conversation concisely, preserving the key points and context."
 )
 
 type Manager struct {
 	basePath string
+	persona  string
 }
 
-func NewManager(basePath string) *Manager {
-	return &Manager{basePath: basePath}
+func NewManager(basePath, persona string) *Manager {
+	return &Manager{basePath: basePath, persona: persona}
 }
 
 func (m *Manager) LoadPersona() (string, error) {
-	path := filepath.Join(m.basePath, personaDir+fileExtension)
+	path := filepath.Join(m.basePath, m.persona+fileExtension)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to load prompt %q: %w", personaDir, err)
+		return "", fmt.Errorf("failed to load persona %q: %w", m.persona, err)
 	}
 	return string(data), nil
 }
