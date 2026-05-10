@@ -7,6 +7,7 @@ import (
 
 	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
+	"github.com/J4NN0/mycel/internal/prompt"
 	"github.com/J4NN0/mycel/internal/redis"
 	"github.com/maximhq/bifrost/core/schemas"
 )
@@ -20,20 +21,22 @@ type Platform interface {
 type MessageHandler func(ctx context.Context, sessionID, text string) (string, error)
 
 type Agent struct {
-	log       logger.Logger
-	provider  llm.Provider
-	history   redis.History
-	persona   string
-	platforms []Platform
+	log                logger.Logger
+	provider           llm.Provider
+	history            redis.History
+	prompts            *prompt.Manager
+	maxHistoryMessages int
+	platforms          []Platform
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.History, persona string, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.History, prompts *prompt.Manager, maxHistoryMessages int, platforms ...Platform) *Agent {
 	return &Agent{
-		log:       log,
-		provider:  provider,
-		history:   history,
-		persona:   persona,
-		platforms: platforms,
+		log:                log,
+		provider:           provider,
+		history:            history,
+		prompts:            prompts,
+		maxHistoryMessages: maxHistoryMessages,
+		platforms:          platforms,
 	}
 }
 
@@ -45,7 +48,8 @@ func (a *Agent) Run(ctx context.Context) error {
 		wg.Add(1)
 		go func(p Platform) {
 			defer wg.Done()
-			if err := p.Run(ctx, a.reply); err != nil {
+			err := p.Run(ctx, a.reply)
+			if err != nil {
 				a.log.Errorf("platform %T failed: %v", p, err)
 				errCh <- err
 			}
@@ -82,47 +86,4 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 	}
 
 	return response, nil
-}
-
-func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Message, error) {
-	messages, err := a.history.Load(ctx, sessionID)
-	if err != nil {
-		return nil, fmt.Errorf("load history: %w", err)
-	}
-	if len(messages) == 0 {
-		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: a.persona}}
-		err := a.history.Save(ctx, sessionID, messages)
-		if err != nil {
-			return nil, fmt.Errorf("seed history: %w", err)
-		}
-	}
-
-	a.log.Debugf("[%s] History loaded: %d message(s)", sessionID, len(messages))
-
-	return messages, nil
-}
-
-func (a *Agent) storeHistory(ctx context.Context, sessionID, text, response string) error {
-	messages, err := a.history.Load(ctx, sessionID)
-	if err != nil {
-		return fmt.Errorf("load history: %w", err)
-	}
-
-	messages = append(messages,
-		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
-		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response},
-	)
-
-	return a.history.Save(ctx, sessionID, messages)
-}
-
-func (a *Agent) clearHistory(ctx context.Context, sessionID string) error {
-	err := a.history.Clear(ctx, sessionID)
-	if err != nil {
-		return err
-	}
-
-	a.log.Debugf("[%s] History cleared", sessionID)
-
-	return nil
 }

@@ -6,11 +6,12 @@ import (
 )
 
 type Config struct {
-	Provider         schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
-	LlmModel         string                `envconfig:"LLM_MODEL" required:"true"`
-	TelegramBotToken string                `envconfig:"TELEGRAM_BOT_TOKEN" required:"true"`
-	RedisAddr        string                `envconfig:"REDIS_ADDR" default:"localhost:6379"`
-	LogLevel         string                `envconfig:"LOG_LEVEL" default:"debug"`
+	Provider           schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
+	LlmModel           string                `envconfig:"LLM_MODEL" required:"true"`
+	MaxHistoryMessages int                   `envconfig:"MAX_HISTORY_MESSAGES" default:"20"`
+	TelegramBotToken   string                `envconfig:"TELEGRAM_BOT_TOKEN" required:"true"`
+	RedisAddr          string                `envconfig:"REDIS_ADDR" default:"localhost:6379"`
+	LogLevel           string                `envconfig:"LOG_LEVEL" default:"debug"`
 }
 
 func ReadConfig() (Config, error) {

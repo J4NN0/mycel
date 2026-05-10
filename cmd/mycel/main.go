@@ -57,13 +57,8 @@ func main() {
 	cliChat := cli.New(log)
 
 	promptManager := prompt.NewManager(promptsDir)
-	persona, err := promptManager.LoadPersona()
-	if err != nil {
-		log.Fatalf("prompt loading failed: %v", err)
-		return
-	}
 
-	ag := agent.New(log, llmProvider, redisClient, persona, bot, cliChat)
+	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.MaxHistoryMessages, bot, cliChat)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)
