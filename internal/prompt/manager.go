@@ -8,8 +8,11 @@ import (
 
 const (
 	fileExtension = ".txt"
+)
 
-	compactPrompt = "Summarize the following conversation concisely, preserving the key points and context."
+const (
+	compactPrompt   = "Summarize the following conversation concisely, preserving the key points and context."
+	objectivePrompt = "Work toward the objective provided below step by step. When the objective is fully complete, include OBJECTIVE_COMPLETE in your response."
 )
 
 type Manager struct {
@@ -32,4 +35,8 @@ func (m *Manager) LoadPersona() (string, error) {
 
 func (m *Manager) LoadCompact() string {
 	return compactPrompt
+}
+
+func (m *Manager) LoadObjective() string {
+	return objectivePrompt
 }

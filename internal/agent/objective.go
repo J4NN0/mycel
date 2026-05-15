@@ -1,0 +1,69 @@
+package agent
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"github.com/J4NN0/mycel/internal/llm"
+	"github.com/maximhq/bifrost/core/schemas"
+)
+
+const (
+	objectiveComplete   = "OBJECTIVE_COMPLETE"
+	objectiveMaxSteps   = 20
+	objectiveStepPause  = 1 * time.Minute
+	objectiveStepPrompt = "Continue working toward the objective. What is the next step?"
+)
+
+func (a *Agent) runObjective(ctx context.Context) {
+	a.log.Printf("Starting objective loop: %s", a.objective)
+
+	persona, err := a.prompts.LoadPersona()
+	if err != nil {
+		a.log.Errorf("objective: failed to load persona: %v", err)
+		return
+	}
+
+	messages := []llm.Message{
+		{Role: schemas.ChatMessageRoleSystem, Content: persona},
+		{Role: schemas.ChatMessageRoleSystem, Content: a.prompts.LoadObjective()},
+		{Role: schemas.ChatMessageRoleUser, Content: a.objective},
+	}
+
+	for step := range objectiveMaxSteps {
+		select {
+		case <-ctx.Done():
+			a.log.Printf("Objective loop cancelled at step %d", step+1)
+			return
+		default:
+		}
+
+		a.log.Debugf("Objective step %d/%d ...", step+1, objectiveMaxSteps)
+
+		response, err := a.provider.Chat(ctx, messages)
+		if err != nil {
+			a.log.Errorf("objective step %d: %v", step+1, err)
+			return
+		}
+
+		a.log.Printf("Objective step %d: %s", step+1, response)
+
+		messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response})
+
+		if strings.Contains(response, objectiveComplete) {
+			a.log.Printf("Objective complete after %d step(s)", step+1)
+			return
+		}
+
+		messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: objectiveStepPrompt})
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(objectiveStepPause):
+		}
+	}
+
+	a.log.Warningf("Objective loop reached max steps (%d) without completing", objectiveMaxSteps)
+}

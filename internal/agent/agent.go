@@ -25,16 +25,18 @@ type Agent struct {
 	provider           llm.Provider
 	history            redis.History
 	prompts            *prompt.Manager
+	objective          string
 	maxHistoryMessages int
 	platforms          []Platform
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.History, prompts *prompt.Manager, maxHistoryMessages int, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.History, prompts *prompt.Manager, objective string, maxHistoryMessages int, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,
 		history:            history,
 		prompts:            prompts,
+		objective:          objective,
 		maxHistoryMessages: maxHistoryMessages,
 		platforms:          platforms,
 	}
@@ -43,6 +45,14 @@ func New(log logger.Logger, provider llm.Provider, history redis.History, prompt
 func (a *Agent) Run(ctx context.Context) error {
 	errCh := make(chan error, len(a.platforms))
 	var wg sync.WaitGroup
+
+	if a.objective != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			a.runObjective(ctx)
+		}()
+	}
 
 	for _, p := range a.platforms {
 		wg.Add(1)
