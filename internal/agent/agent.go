@@ -24,7 +24,7 @@ type MessageHandler func(ctx context.Context, sessionID, text string) (string, e
 type Agent struct {
 	log                logger.Logger
 	provider           llm.Provider
-	history            redis.History
+	history            redis.List
 	prompts            *prompt.Manager
 	tools              []tool.Tool
 	objective          string
@@ -32,7 +32,7 @@ type Agent struct {
 	platforms          []Platform
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.History, prompts *prompt.Manager, objective string, maxHistoryMessages int, agentTools []tool.Tool, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.List, prompts *prompt.Manager, objective string, maxHistoryMessages int, agentTools []tool.Tool, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,

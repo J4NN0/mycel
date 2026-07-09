@@ -22,7 +22,7 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 			return nil, fmt.Errorf("load persona: %w", err)
 		}
 		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: persona}}
-		err = a.history.Save(ctx, messages)
+		err = a.history.Append(ctx, messages...)
 		if err != nil {
 			return nil, fmt.Errorf("seed history: %w", err)
 		}
@@ -34,22 +34,25 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 }
 
 func (a *Agent) storeHistory(ctx context.Context, sessionID, text, response string) error {
-	messages, err := a.history.Load(ctx)
-	if err != nil {
-		return fmt.Errorf("load history: %w", err)
-	}
-
-	messages = append(messages,
+	err := a.history.Append(ctx,
 		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response},
 	)
-
-	err = a.history.Save(ctx, messages)
 	if err != nil {
-		return err
+		return fmt.Errorf("append history: %w", err)
 	}
 
-	if len(messages) > a.maxHistoryMessages {
+	count, err := a.history.Len(ctx)
+	if err != nil {
+		return fmt.Errorf("count history: %w", err)
+	}
+
+	if count > int64(a.maxHistoryMessages) {
+		messages, err := a.history.Load(ctx)
+		if err != nil {
+			return fmt.Errorf("load history: %w", err)
+		}
+
 		err = a.compactHistory(ctx, sessionID, messages)
 		if err != nil {
 			a.log.Errorf("[%s] Failed to compact history: %v", sessionID, err)
@@ -101,7 +104,7 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 	}
 	compacted = append(compacted, messages[len(messages)-keepRecentMessages:]...)
 
-	err = a.history.Save(ctx, compacted)
+	err = a.history.Replace(ctx, compacted)
 	if err != nil {
 		return fmt.Errorf("save compacted history: %w", err)
 	}

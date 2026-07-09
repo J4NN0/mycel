@@ -35,3 +35,11 @@ lint:
 
 # === DEVELOPMENT =======================================================
 pre-commit: mod-tidy fmt build lint vet
+
+# Start dependencies (Redis) via Docker and run the application locally
+run:
+	@echo "---> Starting dependencies"
+	docker compose up -d redis
+	@echo "---> Running $(PROJECT_NAME)"
+	set -a && . ./.env && set +a && go run cmd/$(PROJECT_NAME)/main.go
+.PHONY: run
