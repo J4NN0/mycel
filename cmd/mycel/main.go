@@ -59,14 +59,20 @@ func main() {
 
 	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
 
-	var agentTools []tool.Tool
-	if appConfig.ResendAPIKey != "" {
-		agentTools = append(agentTools, tool.NewEmail(appConfig.ResendAPIKey, appConfig.ResendFrom))
-	}
-
+	agentTools := loadTools(log, appConfig)
 	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.Objective, appConfig.MaxHistoryMessages, agentTools, bot, cliChat)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)
 	}
+}
+
+func loadTools(log logger.Logger, cfg config.Config) []tool.Tool {
+	var tools []tool.Tool
+
+	if email := tool.NewEmail(log, cfg.ResendAPIKey, cfg.ResendFrom); email != nil {
+		tools = append(tools, email)
+	}
+
+	return tools
 }

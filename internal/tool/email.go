@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/J4NN0/mycel/internal/logger"
 	"github.com/maximhq/bifrost/core/schemas"
 	"github.com/resend/resend-go/v3"
 )
@@ -20,15 +21,25 @@ type emailArgs struct {
 }
 
 type Email struct {
+	log    logger.Logger
 	client *resend.Client
 	from   string
 }
 
-func NewEmail(apiKey, from string) *Email {
-	return &Email{
+func NewEmail(log logger.Logger, apiKey, from string) Tool {
+	if apiKey == "" {
+		log.Debugf("Tool skipped: %s (RESEND_API_KEY not set)", emailName)
+		return nil
+	}
+
+	e := &Email{
+		log:    log,
 		client: resend.NewClient(apiKey),
 		from:   from,
 	}
+	e.log.Debugf("Tool loaded: %s", emailName)
+
+	return e
 }
 
 func (t *Email) Definition() schemas.ChatTool {
