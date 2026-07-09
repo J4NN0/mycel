@@ -11,16 +11,18 @@ import (
 	"github.com/J4NN0/mycel/internal/llm"
 )
 
-const keyPrefix = "history:"
+// historyKey is the single Redis key under which the agent's entire
+// conversation history is stored, shared across every platform and user.
+const historyKey = "history:shared"
 
 type History interface {
-	Load(ctx context.Context, sessionID string) ([]llm.Message, error)
-	Save(ctx context.Context, sessionID string, messages []llm.Message) error
-	Clear(ctx context.Context, sessionID string) error
+	Load(ctx context.Context) ([]llm.Message, error)
+	Save(ctx context.Context, messages []llm.Message) error
+	Clear(ctx context.Context) error
 }
 
-func (c *Client) Load(ctx context.Context, sessionID string) ([]llm.Message, error) {
-	data, err := c.rdb.Get(ctx, keyPrefix+sessionID).Bytes()
+func (c *Client) Load(ctx context.Context) ([]llm.Message, error) {
+	data, err := c.rdb.Get(ctx, historyKey).Bytes()
 	if errors.Is(err, goredis.Nil) {
 		return nil, nil
 	}
@@ -37,13 +39,13 @@ func (c *Client) Load(ctx context.Context, sessionID string) ([]llm.Message, err
 	return messages, nil
 }
 
-func (c *Client) Save(ctx context.Context, sessionID string, messages []llm.Message) error {
+func (c *Client) Save(ctx context.Context, messages []llm.Message) error {
 	data, err := json.Marshal(messages)
 	if err != nil {
 		return fmt.Errorf("marshal history: %w", err)
 	}
 
-	err = c.rdb.Set(ctx, keyPrefix+sessionID, data, 0).Err()
+	err = c.rdb.Set(ctx, historyKey, data, 0).Err()
 	if err != nil {
 		return fmt.Errorf("redis set: %w", err)
 	}
@@ -51,8 +53,8 @@ func (c *Client) Save(ctx context.Context, sessionID string, messages []llm.Mess
 	return nil
 }
 
-func (c *Client) Clear(ctx context.Context, sessionID string) error {
-	err := c.rdb.Del(ctx, keyPrefix+sessionID).Err()
+func (c *Client) Clear(ctx context.Context) error {
+	err := c.rdb.Del(ctx, historyKey).Err()
 	if err != nil {
 		return fmt.Errorf("redis del: %w", err)
 	}

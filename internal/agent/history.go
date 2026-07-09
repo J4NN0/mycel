@@ -12,7 +12,7 @@ import (
 const keepRecentMessages = 4
 
 func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Message, error) {
-	messages, err := a.history.Load(ctx, sessionID)
+	messages, err := a.history.Load(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load history: %w", err)
 	}
@@ -22,7 +22,7 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 			return nil, fmt.Errorf("load persona: %w", err)
 		}
 		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: persona}}
-		err = a.history.Save(ctx, sessionID, messages)
+		err = a.history.Save(ctx, messages)
 		if err != nil {
 			return nil, fmt.Errorf("seed history: %w", err)
 		}
@@ -34,7 +34,7 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 }
 
 func (a *Agent) storeHistory(ctx context.Context, sessionID, text, response string) error {
-	messages, err := a.history.Load(ctx, sessionID)
+	messages, err := a.history.Load(ctx)
 	if err != nil {
 		return fmt.Errorf("load history: %w", err)
 	}
@@ -44,7 +44,7 @@ func (a *Agent) storeHistory(ctx context.Context, sessionID, text, response stri
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response},
 	)
 
-	err = a.history.Save(ctx, sessionID, messages)
+	err = a.history.Save(ctx, messages)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (a *Agent) storeHistory(ctx context.Context, sessionID, text, response stri
 }
 
 func (a *Agent) clearHistory(ctx context.Context, sessionID string) error {
-	err := a.history.Clear(ctx, sessionID)
+	err := a.history.Clear(ctx)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 	}
 	compacted = append(compacted, messages[len(messages)-keepRecentMessages:]...)
 
-	err = a.history.Save(ctx, sessionID, compacted)
+	err = a.history.Save(ctx, compacted)
 	if err != nil {
 		return fmt.Errorf("save compacted history: %w", err)
 	}
