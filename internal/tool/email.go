@@ -1,4 +1,4 @@
-package email
+package tool
 
 import (
 	"context"
@@ -9,27 +9,27 @@ import (
 	"github.com/resend/resend-go/v3"
 )
 
-const name = "send_email"
+const emailName = "send_email"
 
-type args struct {
+type emailArgs struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
 }
 
-type Tool struct {
+type Email struct {
 	client *resend.Client
 	from   string
 }
 
-func New(apiKey, from string) *Tool {
-	return &Tool{
+func NewEmail(apiKey, from string) *Email {
+	return &Email{
 		client: resend.NewClient(apiKey),
 		from:   from,
 	}
 }
 
-func (t *Tool) Definition() schemas.ChatTool {
+func (t *Email) Definition() schemas.ChatTool {
 	desc := schemas.Ptr("Send an email to a recipient")
 
 	props := schemas.NewOrderedMapFromPairs(
@@ -41,7 +41,7 @@ func (t *Tool) Definition() schemas.ChatTool {
 	return schemas.ChatTool{
 		Type: schemas.ChatToolTypeFunction,
 		Function: &schemas.ChatToolFunction{
-			Name:        name,
+			Name:        emailName,
 			Description: desc,
 			Parameters: &schemas.ToolFunctionParameters{
 				Type:       "object",
@@ -52,8 +52,8 @@ func (t *Tool) Definition() schemas.ChatTool {
 	}
 }
 
-func (t *Tool) Execute(ctx context.Context, raw json.RawMessage) (string, error) {
-	var a args
+func (t *Email) Execute(ctx context.Context, raw json.RawMessage) (string, error) {
+	var a emailArgs
 	err := json.Unmarshal(raw, &a)
 	if err != nil {
 		return "", fmt.Errorf("parse email args: %w", err)

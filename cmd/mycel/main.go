@@ -16,7 +16,6 @@ import (
 	"github.com/J4NN0/mycel/internal/redis"
 	"github.com/J4NN0/mycel/internal/telegram"
 	"github.com/J4NN0/mycel/internal/tool"
-	"github.com/J4NN0/mycel/internal/tool/email"
 )
 
 const (
@@ -62,7 +61,7 @@ func main() {
 
 	var agentTools []tool.Tool
 	if appConfig.ResendAPIKey != "" {
-		agentTools = append(agentTools, email.New(appConfig.ResendAPIKey, appConfig.ResendFrom))
+		agentTools = append(agentTools, tool.NewEmail(appConfig.ResendAPIKey, appConfig.ResendFrom))
 	}
 
 	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.Objective, appConfig.MaxHistoryMessages, agentTools, bot, cliChat)
