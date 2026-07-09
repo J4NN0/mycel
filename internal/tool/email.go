@@ -11,6 +11,8 @@ import (
 
 const emailName = "send_email"
 
+var _ Tool = (*Email)(nil)
+
 type emailArgs struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
