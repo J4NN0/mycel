@@ -8,12 +8,6 @@ import (
 	"github.com/J4NN0/mycel/internal/llm"
 )
 
-// historyKey is the single Redis key under which the agent's entire
-// conversation history is stored, shared across every platform and user.
-// It's kept as a Redis list (one message per element) rather than a single
-// JSON blob so that appending a message doesn't require reading and
-// rewriting the whole history, and so it isn't bound by Redis's per-value
-// size cap on strings.
 const historyKey = "history:shared"
 
 type List interface {
