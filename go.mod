@@ -3,6 +3,7 @@ module github.com/J4NN0/mycel
 go 1.26.2
 
 require (
+	github.com/chzyer/readline v1.5.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/maximhq/bifrost/core v1.5.1
