@@ -41,7 +41,7 @@ func (a *Agent) runObjective(ctx context.Context) {
 
 		a.log.Debugf("Objective step %d/%d ...", step+1, objectiveMaxSteps)
 
-		response, err := a.provider.Chat(ctx, messages)
+		response, err := a.provider.Chat(ctx, messages, a.tools...)
 		if err != nil {
 			a.log.Errorf("objective step %d: %v", step+1, err)
 			return

@@ -14,6 +14,8 @@ type Config struct {
 	TelegramBotToken   string                `envconfig:"TELEGRAM_BOT_TOKEN" required:"true"`
 	RedisAddr          string                `envconfig:"REDIS_ADDR" default:"localhost:6379"`
 	LogLevel           string                `envconfig:"LOG_LEVEL" default:"debug"`
+	ResendAPIKey       string                `envconfig:"RESEND_API_KEY"`
+	ResendFrom         string                `envconfig:"RESEND_FROM"`
 }
 
 func ReadConfig() (Config, error) {

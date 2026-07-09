@@ -6,12 +6,13 @@ import (
 
 	"github.com/J4NN0/mycel/internal/config"
 	"github.com/J4NN0/mycel/internal/logger"
+	"github.com/J4NN0/mycel/internal/tool"
 	"github.com/maximhq/bifrost/core"
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
 type Provider interface {
-	Chat(ctx context.Context, messages []Message) (string, error)
+	Chat(ctx context.Context, messages []Message, tools ...tool.Tool) (string, error)
 	Shutdown()
 }
 

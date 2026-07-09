@@ -15,6 +15,8 @@ import (
 	"github.com/J4NN0/mycel/internal/prompt"
 	"github.com/J4NN0/mycel/internal/redis"
 	"github.com/J4NN0/mycel/internal/telegram"
+	"github.com/J4NN0/mycel/internal/tool"
+	"github.com/J4NN0/mycel/internal/tool/email"
 )
 
 const (
@@ -58,7 +60,12 @@ func main() {
 
 	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
 
-	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.Objective, appConfig.MaxHistoryMessages, bot, cliChat)
+	var agentTools []tool.Tool
+	if appConfig.ResendAPIKey != "" {
+		agentTools = append(agentTools, email.New(appConfig.ResendAPIKey, appConfig.ResendFrom))
+	}
+
+	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.Objective, appConfig.MaxHistoryMessages, agentTools, bot, cliChat)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)

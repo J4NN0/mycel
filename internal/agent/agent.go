@@ -9,6 +9,7 @@ import (
 	"github.com/J4NN0/mycel/internal/logger"
 	"github.com/J4NN0/mycel/internal/prompt"
 	"github.com/J4NN0/mycel/internal/redis"
+	"github.com/J4NN0/mycel/internal/tool"
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
@@ -25,17 +26,19 @@ type Agent struct {
 	provider           llm.Provider
 	history            redis.History
 	prompts            *prompt.Manager
+	tools              []tool.Tool
 	objective          string
 	maxHistoryMessages int
 	platforms          []Platform
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.History, prompts *prompt.Manager, objective string, maxHistoryMessages int, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.History, prompts *prompt.Manager, objective string, maxHistoryMessages int, agentTools []tool.Tool, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,
 		history:            history,
 		prompts:            prompts,
+		tools:              agentTools,
 		objective:          objective,
 		maxHistoryMessages: maxHistoryMessages,
 		platforms:          platforms,
@@ -85,7 +88,7 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
 
 	a.log.Debugf("[%s] Generating response ...", sessionID)
-	response, err = a.provider.Chat(ctx, messages)
+	response, err = a.provider.Chat(ctx, messages, a.tools...)
 	if err != nil {
 		return "", fmt.Errorf("agent reply: %w", err)
 	}
