@@ -1,5 +1,9 @@
 # Mycel
 
+<p align="center">
+  <img src="assets/mycel.png" width="300" alt="mycel">
+</p>
+
 ## Setup
 
 ### Telegram
@@ -31,28 +35,10 @@ Copy `.env.sample` to `.env` and fill in your values:
 cp .env.sample .env
 ```
 
-Then start all services:
-
-```sh
-docker compose up --build
-```
-
-Alternatively, for local development, run Redis in Docker and the agent directly on your machine:
+Then run the agent:
 
 ```sh
 make run
-```
-
-To stop:
-
-```sh
-docker compose down
-```
-
-To stop and wipe the Redis history:
-
-```sh
-docker compose down -v
 ```
 
 ## Resources
