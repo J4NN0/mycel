@@ -10,10 +10,7 @@
 
 1. Open Telegram and start a chat with [@BotFather](https://t.me/BotFather)
 2. Send `/newbot` and follow the prompts to choose a name and username for your bot
-3. Copy the token BotFather gives you and set it as an environment variable:
-   ```sh
-   export TELEGRAM_BOT_TOKEN=<your-token>
-   ```
+3. Copy the token BotFather gives you and set it as `TELEGRAM_BOT_TOKEN`
 
 ### Resend (email tool)
 
@@ -24,8 +21,6 @@ The agent can send emails through [Resend](https://resend.com).
 3. Set the sender address as `RESEND_FROM`:
    - For quick testing, use the shared sandbox sender `onboarding@resend.dev` — no setup required, but it can only send to the email address you signed up to Resend with.
    - To send to arbitrary recipients, verify a domain you own (Dashboard → Domains, add the SPF/DKIM records) and use an address on that domain, e.g. `agent@yourdomain.com`.
-
-Leave `RESEND_API_KEY` empty to disable the email tool entirely.
 
 ## Run the Agent
 
