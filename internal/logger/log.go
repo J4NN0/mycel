@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -12,6 +13,7 @@ type Logger interface {
 	Warningf(fmt string, args ...interface{})
 	Errorf(fmt string, args ...interface{})
 	Fatalf(fmt string, args ...interface{})
+	SetOutput(w io.Writer)
 }
 
 type Log struct {
@@ -22,10 +24,15 @@ type Log struct {
 func New(name, logLevel string) Logger {
 	l := logrus.New()
 	l.SetOutput(os.Stdout)
+	l.SetFormatter(&logrus.TextFormatter{ForceColors: true})
 	if level, err := logrus.ParseLevel(logLevel); err == nil {
 		l.SetLevel(level)
 	}
 	return &Log{name: name, l: l}
+}
+
+func (l *Log) SetOutput(w io.Writer) {
+	l.l.SetOutput(w)
 }
 
 func (l *Log) Debugf(fmt string, args ...interface{}) {

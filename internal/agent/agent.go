@@ -46,6 +46,9 @@ func New(log logger.Logger, provider llm.Provider, history redis.List, prompts *
 }
 
 func (a *Agent) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	errCh := make(chan error, len(a.platforms))
 	var wg sync.WaitGroup
 
@@ -61,6 +64,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		wg.Add(1)
 		go func(p Platform) {
 			defer wg.Done()
+			defer cancel()
 			err := p.Run(ctx, a.reply)
 			if err != nil {
 				a.log.Errorf("platform %T failed: %v", p, err)

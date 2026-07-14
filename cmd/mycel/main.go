@@ -55,7 +55,7 @@ func main() {
 		return
 	}
 
-	cliChat := cli.New(log)
+	cliChat := cli.New(log, appName)
 
 	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
 
