@@ -8,6 +8,7 @@ import (
 
 const (
 	fileExtension = ".txt"
+	personasDir   = "personas"
 	objectiveName = "objective"
 	compactName   = "compact"
 )
@@ -22,7 +23,7 @@ func NewManager(basePath, persona string) *Manager {
 }
 
 func (m *Manager) LoadPersona() (string, error) {
-	return m.loadFile(m.persona)
+	return m.loadFile(filepath.Join(personasDir, m.persona))
 }
 
 func (m *Manager) LoadObjective() (string, error) {
