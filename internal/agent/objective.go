@@ -47,17 +47,17 @@ func (a *Agent) runObjective(ctx context.Context, objective string) {
 
 		a.log.Debugf("Objective step %d/%d ...", step+1, objectiveMaxSteps)
 
-		response, err := a.provider.Chat(ctx, messages, a.tools...)
+		result, err := a.provider.Chat(ctx, messages, a.tools...)
 		if err != nil {
 			a.log.Errorf("objective step %d: %v", step+1, err)
 			return
 		}
 
-		a.log.Printf("Objective step %d: %s", step+1, response)
+		a.log.Printf("Objective step %d: %s", step+1, result.Content)
 
-		messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: response})
+		messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: result.Content})
 
-		if strings.Contains(response, objectiveComplete) {
+		if strings.Contains(result.Content, objectiveComplete) {
 			a.log.Printf("Objective complete after %d step(s)", step+1)
 			return
 		}

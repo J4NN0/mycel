@@ -1,9 +1,13 @@
 Summarize the following conversation concisely, preserving the key points and context.
 
+If the input begins with a summary of earlier messages, treat it as established truth: carry every fact it holds forward and fold the newer messages into it. Never drop or water down anything already captured in that earlier summary.
+
 Keep everything that matters for continuing the conversation naturally:
 - Facts and details the user has shared about themselves, their goals, and their situation
 - Decisions made, conclusions reached, and any commitments or next steps
 - Open questions or unresolved threads still in play
 - The user's tone and preferences, so the summary can pick up where things left off
+
+Preserve specific names, dates, numbers, identifiers, and commitments verbatim — these are the details generic summaries tend to lose.
 
 Drop small talk and redundant back-and-forth. Write the summary as a compact set of notes, not a transcript. Do not add information that was not in the conversation.

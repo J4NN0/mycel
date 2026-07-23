@@ -28,10 +28,12 @@ type Agent struct {
 	promptManager      *prompt.Manager
 	tools              []tool.Tool
 	maxHistoryMessages int
+	maxHistoryTokens   int
 	platforms          []Platform
+	mu                 sync.Mutex
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.List, promptManager *prompt.Manager, maxHistoryMessages int, agentTools []tool.Tool, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.List, promptManager *prompt.Manager, maxHistoryMessages, maxHistoryTokens int, agentTools []tool.Tool, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,
@@ -39,6 +41,7 @@ func New(log logger.Logger, provider llm.Provider, history redis.List, promptMan
 		promptManager:      promptManager,
 		tools:              agentTools,
 		maxHistoryMessages: maxHistoryMessages,
+		maxHistoryTokens:   maxHistoryTokens,
 		platforms:          platforms,
 	}
 }
@@ -70,6 +73,9 @@ func (a *Agent) Run(ctx context.Context) error {
 }
 
 func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	response, isCmd := a.handleCommand(ctx, sessionID, text)
 	if isCmd {
 		return response, nil
@@ -82,15 +88,15 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
 
 	a.log.Debugf("[%s] Generating response ...", sessionID)
-	response, err = a.provider.Chat(ctx, messages, a.tools...)
+	result, err := a.provider.Chat(ctx, messages, a.tools...)
 	if err != nil {
 		return "", fmt.Errorf("agent reply: %w", err)
 	}
 
-	err = a.storeHistory(ctx, sessionID, text, response)
+	err = a.storeHistory(ctx, sessionID, text, result)
 	if err != nil {
 		a.log.Errorf("[%s] Failed to store history: %v", sessionID, err)
 	}
 
-	return response, nil
+	return result.Content, nil
 }

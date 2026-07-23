@@ -14,7 +14,14 @@ type Message struct {
 	Content string
 }
 
-func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) (string, error) {
+type Response struct {
+	Content          string
+	PromptTokens     int
+	CompletionTokens int
+	TotalTokens      int
+}
+
+func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) (Response, error) {
 	chatMessages := make([]schemas.ChatMessage, len(messages))
 	for i, m := range messages {
 		chatMessages[i] = schemas.ChatMessage{
@@ -40,12 +47,12 @@ func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) 
 			Params:   params,
 		})
 		if err != nil {
-			return "", fmt.Errorf("chat completion request: %v", err)
+			return Response{}, fmt.Errorf("chat completion request: %v", err)
 		}
 
 		choice := response.Choices[0]
 		if choice.FinishReason == nil || *choice.FinishReason != string(schemas.BifrostFinishReasonToolCalls) {
-			return *choice.Message.Content.ContentStr, nil
+			return newResponse(*choice.Message.Content.ContentStr, response), nil
 		}
 
 		toolCalls := choice.Message.ChatAssistantMessage.ToolCalls
@@ -71,6 +78,16 @@ func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) 
 			})
 		}
 	}
+}
+
+func newResponse(content string, response *schemas.BifrostChatResponse) Response {
+	r := Response{Content: content}
+	if response != nil && response.Usage != nil {
+		r.PromptTokens = response.Usage.PromptTokens
+		r.CompletionTokens = response.Usage.CompletionTokens
+		r.TotalTokens = response.Usage.TotalTokens
+	}
+	return r
 }
 
 func initTools(tools []tool.Tool) ([]schemas.ChatTool, map[string]tool.Tool) {
