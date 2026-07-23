@@ -61,7 +61,7 @@ func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) 
 			if execErr != nil {
 				errMsg := fmt.Sprintf("tool %s failed: %v", *tc.Function.Name, execErr)
 				chatMsgResult = errMsg
-				l.log.Errorf(errMsg)
+				l.log.Errorf("%s", errMsg)
 			}
 
 			chatMessages = append(chatMessages, schemas.ChatMessage{
