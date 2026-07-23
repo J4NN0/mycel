@@ -16,8 +16,8 @@ const (
 	objectiveStepPrompt = "Continue working toward the objective. What is the next step?"
 )
 
-func (a *Agent) runObjective(ctx context.Context) {
-	a.log.Printf("Starting objective loop: %s", a.objective)
+func (a *Agent) runObjective(ctx context.Context, objective string) {
+	a.log.Printf("Starting objective loop: %s", objective)
 
 	persona, err := a.prompts.LoadPersona()
 	if err != nil {
@@ -28,7 +28,7 @@ func (a *Agent) runObjective(ctx context.Context) {
 	messages := []llm.Message{
 		{Role: schemas.ChatMessageRoleSystem, Content: persona},
 		{Role: schemas.ChatMessageRoleSystem, Content: a.prompts.LoadObjective()},
-		{Role: schemas.ChatMessageRoleUser, Content: a.objective},
+		{Role: schemas.ChatMessageRoleUser, Content: objective},
 	}
 
 	for step := range objectiveMaxSteps {

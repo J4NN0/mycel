@@ -60,7 +60,7 @@ func main() {
 	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
 
 	agentTools := loadTools(log, appConfig)
-	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.Objective, appConfig.MaxHistoryMessages, agentTools, bot, cliChat)
+	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.MaxHistoryMessages, agentTools, bot, cliChat)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)

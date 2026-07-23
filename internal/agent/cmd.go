@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	cmdStart = "start"
-	cmdHelp  = "help"
-	cmdClear = "clear"
+	cmdStart     = "start"
+	cmdHelp      = "help"
+	cmdClear     = "clear"
+	cmdObjective = "objective"
 )
 
 type Command struct {
@@ -21,10 +22,18 @@ var Commands = []Command{
 	{Name: cmdStart, Description: "Start interacting with Mycel"},
 	{Name: cmdHelp, Description: "Show available commands"},
 	{Name: cmdClear, Description: "Reset the conversation history"},
+	{Name: cmdObjective, Description: "Give Mycel an objective to work toward autonomously"},
 }
 
 func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (string, bool) {
-	switch strings.TrimPrefix(text, "/") {
+	if !strings.HasPrefix(text, "/") {
+		return "", false
+	}
+
+	name, arg, _ := strings.Cut(strings.TrimPrefix(strings.TrimSpace(text), "/"), " ")
+	arg = strings.TrimSpace(arg)
+
+	switch name {
 	case cmdStart:
 		return "Hey, I'm Mycel. Drop me a message and let's talk.", true
 	case cmdHelp:
@@ -36,6 +45,12 @@ func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (stri
 			return "Failed to clear conversation history.", true
 		}
 		return "Conversation history cleared.", true
+	case cmdObjective:
+		if arg == "" {
+			return "Usage: /objective <what you want me to work toward>", true
+		}
+		go a.runObjective(ctx, arg)
+		return "Objective accepted. Working on it…", true
 	}
 
 	return "", false
