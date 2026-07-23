@@ -1,0 +1,9 @@
+Summarize the following conversation concisely, preserving the key points and context.
+
+Keep everything that matters for continuing the conversation naturally:
+- Facts and details the user has shared about themselves, their goals, and their situation
+- Decisions made, conclusions reached, and any commitments or next steps
+- Open questions or unresolved threads still in play
+- The user's tone and preferences, so the summary can pick up where things left off
+
+Drop small talk and redundant back-and-forth. Write the summary as a compact set of notes, not a transcript. Do not add information that was not in the conversation.

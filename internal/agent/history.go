@@ -81,10 +81,15 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 		sb.WriteString(fmt.Sprintf("%s: %s\n", m.Role, m.Content))
 	}
 
+	compactPrompt, err := a.promptManager.LoadCompact()
+	if err != nil {
+		return fmt.Errorf("load compact prompt: %w", err)
+	}
+
 	summaryRequest := []llm.Message{
 		{
 			Role:    schemas.ChatMessageRoleSystem,
-			Content: a.promptManager.LoadCompact(),
+			Content: compactPrompt,
 		},
 		{
 			Role:    schemas.ChatMessageRoleUser,

@@ -9,9 +9,8 @@ import (
 const (
 	fileExtension = ".txt"
 	objectiveName = "objective"
+	compactName   = "compact"
 )
-
-const compactPrompt = "Summarize the following conversation concisely, preserving the key points and context."
 
 type Manager struct {
 	basePath string
@@ -30,8 +29,8 @@ func (m *Manager) LoadObjective() (string, error) {
 	return m.loadFile(objectiveName)
 }
 
-func (m *Manager) LoadCompact() string {
-	return compactPrompt
+func (m *Manager) LoadCompact() (string, error) {
+	return m.loadFile(compactName)
 }
 
 func (m *Manager) loadFile(name string) (string, error) {
