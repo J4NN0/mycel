@@ -25,9 +25,15 @@ func (a *Agent) runObjective(ctx context.Context, objective string) {
 		return
 	}
 
+	objectivePrompt, err := a.promptManager.LoadObjective()
+	if err != nil {
+		a.log.Errorf("objective: failed to load objective prompt: %v", err)
+		return
+	}
+
 	messages := []llm.Message{
 		{Role: schemas.ChatMessageRoleSystem, Content: persona},
-		{Role: schemas.ChatMessageRoleSystem, Content: a.promptManager.LoadObjective()},
+		{Role: schemas.ChatMessageRoleSystem, Content: objectivePrompt},
 		{Role: schemas.ChatMessageRoleUser, Content: objective},
 	}
 

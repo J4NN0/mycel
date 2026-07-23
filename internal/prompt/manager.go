@@ -8,12 +8,10 @@ import (
 
 const (
 	fileExtension = ".txt"
+	objectiveName = "objective"
 )
 
-const (
-	compactPrompt   = "Summarize the following conversation concisely, preserving the key points and context."
-	objectivePrompt = "Work toward the objective provided below step by step. When the objective is fully complete, include OBJECTIVE_COMPLETE in your response."
-)
+const compactPrompt = "Summarize the following conversation concisely, preserving the key points and context."
 
 type Manager struct {
 	basePath string
@@ -25,18 +23,22 @@ func NewManager(basePath, persona string) *Manager {
 }
 
 func (m *Manager) LoadPersona() (string, error) {
-	path := filepath.Join(m.basePath, m.persona+fileExtension)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("failed to load persona %q: %w", m.persona, err)
-	}
-	return string(data), nil
+	return m.loadFile(m.persona)
+}
+
+func (m *Manager) LoadObjective() (string, error) {
+	return m.loadFile(objectiveName)
 }
 
 func (m *Manager) LoadCompact() string {
 	return compactPrompt
 }
 
-func (m *Manager) LoadObjective() string {
-	return objectivePrompt
+func (m *Manager) loadFile(name string) (string, error) {
+	path := filepath.Join(m.basePath, name+fileExtension)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to load prompt %q: %w", name, err)
+	}
+	return string(data), nil
 }
