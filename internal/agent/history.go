@@ -17,7 +17,7 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 		return nil, fmt.Errorf("load history: %w", err)
 	}
 	if len(messages) == 0 {
-		persona, err := a.prompts.LoadPersona()
+		persona, err := a.promptManager.LoadPersona()
 		if err != nil {
 			return nil, fmt.Errorf("load persona: %w", err)
 		}
@@ -84,7 +84,7 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 	summaryRequest := []llm.Message{
 		{
 			Role:    schemas.ChatMessageRoleSystem,
-			Content: a.prompts.LoadCompact(),
+			Content: a.promptManager.LoadCompact(),
 		},
 		{
 			Role:    schemas.ChatMessageRoleUser,

@@ -25,18 +25,18 @@ type Agent struct {
 	log                logger.Logger
 	provider           llm.Provider
 	history            redis.List
-	prompts            *prompt.Manager
+	promptManager      *prompt.Manager
 	tools              []tool.Tool
 	maxHistoryMessages int
 	platforms          []Platform
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.List, prompts *prompt.Manager, maxHistoryMessages int, agentTools []tool.Tool, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.List, promptManager *prompt.Manager, maxHistoryMessages int, agentTools []tool.Tool, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,
 		history:            history,
-		prompts:            prompts,
+		promptManager:      promptManager,
 		tools:              agentTools,
 		maxHistoryMessages: maxHistoryMessages,
 		platforms:          platforms,

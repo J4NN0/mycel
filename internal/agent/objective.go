@@ -19,7 +19,7 @@ const (
 func (a *Agent) runObjective(ctx context.Context, objective string) {
 	a.log.Printf("Starting objective loop: %s", objective)
 
-	persona, err := a.prompts.LoadPersona()
+	persona, err := a.promptManager.LoadPersona()
 	if err != nil {
 		a.log.Errorf("objective: failed to load persona: %v", err)
 		return
@@ -27,7 +27,7 @@ func (a *Agent) runObjective(ctx context.Context, objective string) {
 
 	messages := []llm.Message{
 		{Role: schemas.ChatMessageRoleSystem, Content: persona},
-		{Role: schemas.ChatMessageRoleSystem, Content: a.prompts.LoadObjective()},
+		{Role: schemas.ChatMessageRoleSystem, Content: a.promptManager.LoadObjective()},
 		{Role: schemas.ChatMessageRoleUser, Content: objective},
 	}
 
