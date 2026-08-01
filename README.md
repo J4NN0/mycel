@@ -21,6 +21,7 @@ The agent can send emails through [Resend](https://resend.com).
 3. Set the sender address as `RESEND_FROM`:
    - For quick testing, use the shared sandbox sender `onboarding@resend.dev` — no setup required, but it can only send to the email address you signed up to Resend with.
    - To send to arbitrary recipients, verify a domain you own (Dashboard → Domains, add the SPF/DKIM records) and use an address on that domain, e.g. `agent@yourdomain.com`.
+The tool is only registered when both `RESEND_API_KEY` and `RESEND_FROM` are set.
 
 ## Run the Agent
 

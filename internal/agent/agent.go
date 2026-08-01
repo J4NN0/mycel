@@ -85,6 +85,7 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 	if err != nil {
 		return "", err
 	}
+	messages = a.withToolPolicy(messages)
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
 
 	a.log.Debugf("[%s] Generating response ...", sessionID)
@@ -99,4 +100,26 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 	}
 
 	return result.Content, nil
+}
+
+func (a *Agent) withToolPolicy(messages []llm.Message) []llm.Message {
+	if len(a.tools) == 0 {
+		return messages
+	}
+
+	policy, err := a.promptManager.LoadTools()
+	if err != nil {
+		a.log.Errorf("Failed to load tool prompt: %v", err)
+		return messages
+	}
+
+	policyMsg := llm.Message{Role: schemas.ChatMessageRoleSystem, Content: policy}
+	if len(messages) == 0 {
+		return []llm.Message{policyMsg}
+	}
+
+	withPolicy := make([]llm.Message, 0, len(messages)+1)
+	withPolicy = append(withPolicy, messages[0], policyMsg)
+
+	return append(withPolicy, messages[1:]...)
 }

@@ -31,11 +31,11 @@ func (a *Agent) runObjective(ctx context.Context, objective string) {
 		return
 	}
 
-	messages := []llm.Message{
+	messages := a.withToolPolicy([]llm.Message{
 		{Role: schemas.ChatMessageRoleSystem, Content: persona},
 		{Role: schemas.ChatMessageRoleSystem, Content: objectivePrompt},
 		{Role: schemas.ChatMessageRoleUser, Content: objective},
-	}
+	})
 
 	for step := range objectiveMaxSteps {
 		select {

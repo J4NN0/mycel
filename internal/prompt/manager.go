@@ -11,6 +11,7 @@ const (
 	personasDir   = "personas"
 	objectiveName = "objective"
 	compactName   = "compact"
+	toolsName     = "tools"
 )
 
 type Manager struct {
@@ -32,6 +33,10 @@ func (m *Manager) LoadObjective() (string, error) {
 
 func (m *Manager) LoadCompact() (string, error) {
 	return m.loadFile(compactName)
+}
+
+func (m *Manager) LoadTools() (string, error) {
+	return m.loadFile(toolsName)
 }
 
 func (m *Manager) loadFile(name string) (string, error) {
