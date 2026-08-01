@@ -166,7 +166,7 @@ func (m *model) appendLine(s string) {
 		return
 	}
 	atBottom := m.vp.AtBottom()
-	m.vp.SetContent(strings.Join(m.lines, "\n"))
+	m.vp.SetContent(m.contentView())
 	if atBottom {
 		m.vp.GotoBottom()
 	}
@@ -179,8 +179,21 @@ func (m *model) resize(w, h int) {
 	footerHeight := lipgloss.Height(m.footerView())
 	m.vp.SetWidth(w)
 	m.vp.SetHeight(max(1, h-footerHeight))
-	m.vp.SetContent(strings.Join(m.lines, "\n"))
+	m.vp.SetContent(m.contentView())
 	m.vp.GotoBottom()
+}
+
+func (m model) contentView() string {
+	width := m.vp.Width()
+	if width <= 0 {
+		return strings.Join(m.lines, "\n")
+	}
+
+	wrapped := make([]string, len(m.lines))
+	for i, line := range m.lines {
+		wrapped[i] = lipgloss.Wrap(line, width, "")
+	}
+	return strings.Join(wrapped, "\n")
 }
 
 func (m model) footerView() string {
@@ -189,17 +202,18 @@ func (m model) footerView() string {
 }
 
 func (m model) hintView() string {
+	style := hintStyle.MaxWidth(max(1, m.width))
 	if m.busy {
-		return hintStyle.Render("  " + m.name + " is thinking…")
+		return style.Render("  " + m.name + " is thinking…")
 	}
 	if matches := matchingCommands(m.input.Value()); len(matches) > 0 {
 		hints := make([]string, len(matches))
 		for i, name := range matches {
 			hints[i] = "/" + name
 		}
-		return hintStyle.Render("  " + strings.Join(hints, "  "))
+		return style.Render("  " + strings.Join(hints, "  "))
 	}
-	return hintStyle.Render("  / for commands · " + keyCtrlC + " to quit")
+	return style.Render("  / for commands · " + keyCtrlC + " to quit")
 }
 
 func (m model) View() tea.View {
