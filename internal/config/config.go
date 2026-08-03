@@ -10,10 +10,10 @@ type Config struct {
 	LlmModel           string                `envconfig:"LLM_MODEL" required:"true"`
 	MaxHistoryMessages int                   `envconfig:"MAX_HISTORY_MESSAGES" default:"20"`
 	MaxHistoryTokens   int                   `envconfig:"MAX_HISTORY_TOKENS" default:"6000"`
-	Persona            string                `envconfig:"PERSONA" default:"influencer"`
-	TelegramBotToken   string                `envconfig:"TELEGRAM_BOT_TOKEN" required:"true"`
+	Persona            string                `envconfig:"PERSONA" default:"neutral"`
+	TelegramBotToken   string                `envconfig:"TELEGRAM_BOT_TOKEN"`
 	RedisAddr          string                `envconfig:"REDIS_ADDR" default:"localhost:6379"`
-	LogLevel           string                `envconfig:"LOG_LEVEL" default:"debug"`
+	LogLevel           string                `envconfig:"LOG_LEVEL" default:"info"`
 	ResendAPIKey       string                `envconfig:"RESEND_API_KEY"`
 	ResendFrom         string                `envconfig:"RESEND_FROM"`
 }

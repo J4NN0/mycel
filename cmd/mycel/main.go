@@ -49,18 +49,11 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	bot, err := telegram.NewBot(appConfig.TelegramBotToken, log)
-	if err != nil {
-		log.Fatalf("telegram bot initialization failed: %v", err)
-		return
-	}
-
-	cliChat := cli.New(log, appName)
-
 	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
-
+	platforms := loadPlatforms(log, appConfig)
 	agentTools := loadTools(log, appConfig)
-	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.MaxHistoryMessages, appConfig.MaxHistoryTokens, agentTools, bot, cliChat)
+
+	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.MaxHistoryMessages, appConfig.MaxHistoryTokens, agentTools, platforms...)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)
@@ -75,4 +68,21 @@ func loadTools(log logger.Logger, cfg config.Config) []tool.Tool {
 	}
 
 	return tools
+}
+
+func loadPlatforms(log logger.Logger, cfg config.Config) []agent.Platform {
+	platforms := []agent.Platform{cli.New(log, appName)}
+
+	if cfg.TelegramBotToken != "" {
+		bot, err := telegram.NewBot(cfg.TelegramBotToken, log)
+		if err != nil {
+			log.Fatalf("telegram bot initialization failed: %v", err)
+			return nil
+		}
+		platforms = append(platforms, bot)
+	} else {
+		log.Printf("Telegram bot token not set, telegram platform disabled")
+	}
+
+	return platforms
 }
