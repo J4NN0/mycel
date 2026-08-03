@@ -4,14 +4,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
 	fileExtension = ".txt"
-	personasDir   = "personas"
+	purposeName   = "purpose"
 	objectiveName = "objective"
 	compactName   = "compact"
 	toolsName     = "tools"
+)
+
+const (
+	personasDir = "personas"
 )
 
 type Manager struct {
@@ -23,8 +28,18 @@ func NewManager(basePath, persona string) *Manager {
 	return &Manager{basePath: basePath, persona: persona}
 }
 
-func (m *Manager) LoadPersona() (string, error) {
-	return m.loadFile(filepath.Join(personasDir, m.persona))
+func (m *Manager) LoadSystem() (string, error) {
+	purpose, err := m.loadFile(purposeName)
+	if err != nil {
+		return "", err
+	}
+
+	persona, err := m.loadFile(filepath.Join(personasDir, m.persona))
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s\n\n## How you sound\n\n%s", strings.TrimSpace(purpose), strings.TrimSpace(persona)), nil
 }
 
 func (m *Manager) LoadObjective() (string, error) {

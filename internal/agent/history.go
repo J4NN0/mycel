@@ -20,11 +20,12 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 		return nil, fmt.Errorf("load history: %w", err)
 	}
 	if len(messages) == 0 {
-		persona, err := a.promptManager.LoadPersona()
+		systemPrompt, err := a.promptManager.LoadSystem()
 		if err != nil {
-			return nil, fmt.Errorf("load persona: %w", err)
+			return nil, fmt.Errorf("load system prompt: %w", err)
 		}
-		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: persona}}
+
+		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: systemPrompt}}
 		err = a.history.Append(ctx, messages...)
 		if err != nil {
 			return nil, fmt.Errorf("seed history: %w", err)
@@ -66,10 +67,10 @@ func (a *Agent) storeHistory(ctx context.Context, sessionID, text string, result
 }
 
 func (a *Agent) shouldCompact(count int64, promptTokens int) bool {
-	// A compacted history is persona + summary + the retained tail. At or below
-	// that size there is no older content for compaction to shrink.
-	const personaAndSummary = 2
-	if count <= int64(keepRecentMessages+personaAndSummary) {
+	// A compacted history is system prompt + summary + the retained tail. At or
+	// below that size there is no older content for compaction to shrink.
+	const systemAndSummary = 2
+	if count <= int64(keepRecentMessages+systemAndSummary) {
 		return false
 	}
 	// Use the real context size when the provider reports it; otherwise fall
@@ -94,7 +95,7 @@ func (a *Agent) clearHistory(ctx context.Context, sessionID string) error {
 func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages []llm.Message) error {
 	a.log.Debugf("[%s] Compacting history (%d messages) ...", sessionID, len(messages))
 
-	persona, priorSummary, body := splitForCompaction(messages)
+	systemPrompt, priorSummary, body := splitForCompaction(messages)
 
 	compactPrompt, err := a.promptManager.LoadCompact()
 	if err != nil {
@@ -109,7 +110,7 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 		return fmt.Errorf("summarize history: %w", err)
 	}
 
-	compacted := assembleCompacted(persona, result.Content, messages)
+	compacted := assembleCompacted(systemPrompt, result.Content, messages)
 
 	err = a.history.Replace(ctx, compacted)
 	if err != nil {
@@ -121,16 +122,16 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 	return nil
 }
 
-// splitForCompaction separates the persona system prompt and any summary left by
-// a previous compaction from the newer messages to be folded in.
-func splitForCompaction(messages []llm.Message) (persona llm.Message, priorSummary string, body []llm.Message) {
-	persona = messages[0]
+// splitForCompaction separates the system prompt and any summary left by a
+// previous compaction from the newer messages to be folded in.
+func splitForCompaction(messages []llm.Message) (systemPrompt llm.Message, priorSummary string, body []llm.Message) {
+	systemPrompt = messages[0]
 	body = messages[1:]
 	if len(body) > 0 && body[0].Role == schemas.ChatMessageRoleSystem && strings.HasPrefix(body[0].Content, summaryPrefix) {
 		priorSummary = strings.TrimPrefix(body[0].Content, summaryPrefix)
 		body = body[1:]
 	}
-	return persona, priorSummary, body
+	return systemPrompt, priorSummary, body
 }
 
 func buildSummaryInput(priorSummary string, body []llm.Message) string {
@@ -146,14 +147,14 @@ func buildSummaryInput(priorSummary string, body []llm.Message) string {
 	return sb.String()
 }
 
-func assembleCompacted(persona llm.Message, summary string, messages []llm.Message) []llm.Message {
+func assembleCompacted(systemPrompt llm.Message, summary string, messages []llm.Message) []llm.Message {
 	compacted := []llm.Message{
-		persona,
+		systemPrompt,
 		{Role: schemas.ChatMessageRoleSystem, Content: summaryPrefix + summary},
 	}
 	start := len(messages) - keepRecentMessages
 	if start < 1 {
-		start = 1 // never fold the persona into the retained tail
+		start = 1 // never fold the system prompt into the retained tail
 	}
 	return append(compacted, messages[start:]...)
 }

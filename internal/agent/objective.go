@@ -19,9 +19,9 @@ const (
 func (a *Agent) runObjective(ctx context.Context, objective string) {
 	a.log.Printf("Starting objective loop: %s", objective)
 
-	persona, err := a.promptManager.LoadPersona()
+	systemPrompt, err := a.promptManager.LoadSystem()
 	if err != nil {
-		a.log.Errorf("objective: failed to load persona: %v", err)
+		a.log.Errorf("objective: failed to load system prompt: %v", err)
 		return
 	}
 
@@ -32,7 +32,7 @@ func (a *Agent) runObjective(ctx context.Context, objective string) {
 	}
 
 	messages := a.withToolPolicy([]llm.Message{
-		{Role: schemas.ChatMessageRoleSystem, Content: persona},
+		{Role: schemas.ChatMessageRoleSystem, Content: systemPrompt},
 		{Role: schemas.ChatMessageRoleSystem, Content: objectivePrompt},
 		{Role: schemas.ChatMessageRoleUser, Content: objective},
 	})
