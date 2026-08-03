@@ -39,3 +39,4 @@ make run
 
 ## Resources
 - [Bifrost](https://docs.getbifrost.ai/quickstart/go-sdk/setting-up)
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea)
