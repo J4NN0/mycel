@@ -26,6 +26,11 @@ const (
 	keyPgDown = "pgdown"
 	keyCtrlU  = "ctrl+u"
 	keyCtrlD  = "ctrl+d"
+
+	avatarArt = " .-o-00-o-.\n" +
+		"(__________)\n" +
+		"   |●  ●|\n" +
+		"   |____|"
 )
 
 var (
@@ -34,6 +39,10 @@ var (
 	promptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Bold(true)
 	nameStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true)
 	errorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+	avatarStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).MarginRight(1)
+
+	avatarWidth    = lipgloss.Width(avatarStyle.Render(avatarArt))
+	minAvatarWidth = avatarWidth + 24
 )
 
 type logLineMsg string
@@ -91,20 +100,19 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.resize(msg.Width, msg.Height)
+		m = m.resize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
 	case logLineMsg:
-		m.appendLine(string(msg))
-		return m, nil
+		return m.appendLine(string(msg)), nil
 
 	case replyMsg:
 		m.busy = false
 		if msg.err != nil {
-			m.appendLine(errorStyle.Render("error: " + msg.err.Error()))
+			m = m.appendLine(errorStyle.Render("error: " + msg.err.Error()))
 		} else {
-			m.appendLine(nameStyle.Render(m.name+": ") + msg.response)
+			m = m.appendLine(nameStyle.Render(m.name+": ") + msg.response)
 		}
 		return m, nil
 
@@ -146,7 +154,7 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	m.appendLine(promptStyle.Render(promptSymbol) + text)
+	m = m.appendLine(promptStyle.Render(promptSymbol) + text)
 	m.input.Reset()
 	m.busy = true
 
@@ -157,30 +165,32 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m *model) appendLine(s string) {
+func (m model) appendLine(s string) model {
 	m.lines = append(m.lines, s)
 	if len(m.lines) > maxLines {
 		m.lines = m.lines[len(m.lines)-maxLines:]
 	}
 	if !m.ready {
-		return
+		return m
 	}
 	atBottom := m.vp.AtBottom()
 	m.vp.SetContent(m.contentView())
 	if atBottom {
 		m.vp.GotoBottom()
 	}
+	return m
 }
 
-func (m *model) resize(w, h int) {
+func (m model) resize(w, h int) model {
 	m.width = w
-	m.input.SetWidth(max(1, w-6))
+	m.input.SetWidth(max(1, m.boxWidth()-6))
 
 	footerHeight := lipgloss.Height(m.footerView())
 	m.vp.SetWidth(w)
 	m.vp.SetHeight(max(1, h-footerHeight))
 	m.vp.SetContent(m.contentView())
 	m.vp.GotoBottom()
+	return m
 }
 
 func (m model) contentView() string {
@@ -196,13 +206,25 @@ func (m model) contentView() string {
 	return strings.Join(wrapped, "\n")
 }
 
-func (m model) footerView() string {
-	box := boxStyle.Width(max(1, m.width)).Render(m.input.View())
-	return lipgloss.JoinVertical(lipgloss.Left, box, m.hintView())
+func (m model) boxWidth() int {
+	if m.width > minAvatarWidth {
+		return m.width - avatarWidth
+	}
+	return max(1, m.width)
 }
 
-func (m model) hintView() string {
-	style := hintStyle.MaxWidth(max(1, m.width))
+func (m model) footerView() string {
+	width := m.boxWidth()
+	box := boxStyle.Width(width).Render(m.input.View())
+	stack := lipgloss.JoinVertical(lipgloss.Left, box, m.hintView(width))
+	if m.width <= minAvatarWidth {
+		return stack
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, avatarStyle.Render(avatarArt), stack)
+}
+
+func (m model) hintView(width int) string {
+	style := hintStyle.MaxWidth(max(1, width))
 	if m.busy {
 		return style.Render("  " + m.name + " is thinking…")
 	}
