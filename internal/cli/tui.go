@@ -17,7 +17,9 @@ const (
 	maxLines     = 5000
 	promptSymbol = "> "
 	welcomeLine  = "Terminal chat ready. Type a message and press Enter. Type / to see available commands."
+)
 
+const (
 	keyCtrlC  = "ctrl+c"
 	keyEsc    = "esc"
 	keyEnter  = "enter"
@@ -26,23 +28,6 @@ const (
 	keyPgDown = "pgdown"
 	keyCtrlU  = "ctrl+u"
 	keyCtrlD  = "ctrl+d"
-
-	avatarArt = " .-o-00-o-.\n" +
-		"(__________)\n" +
-		"   |●  ●|\n" +
-		"   |____|"
-)
-
-var (
-	boxStyle    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("63")).Padding(0, 1)
-	hintStyle   = lipgloss.NewStyle().Faint(true)
-	promptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Bold(true)
-	nameStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true)
-	errorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	avatarStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).MarginRight(1)
-
-	avatarWidth    = lipgloss.Width(avatarStyle.Render(avatarArt))
-	minAvatarWidth = avatarWidth + 24
 )
 
 type logLineMsg string
@@ -68,12 +53,13 @@ type model struct {
 	name    string
 	handler agent.MessageHandler
 
-	vp    viewport.Model
-	input textinput.Model
-	lines []string
-	width int
-	ready bool
-	busy  bool
+	vp       viewport.Model
+	input    textinput.Model
+	lines    []string
+	width    int
+	ready    bool
+	busy     bool
+	eyesShut bool
 }
 
 func newModel(ctx context.Context, name string, handler agent.MessageHandler) model {
@@ -94,7 +80,7 @@ func newModel(ctx context.Context, name string, handler agent.MessageHandler) mo
 }
 
 func (m model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, openEyesCmd())
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -103,6 +89,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.resize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
+
+	case blinkMsg:
+		m.eyesShut = !m.eyesShut
+		if m.eyesShut {
+			return m, blinkCmd(blinkShutFor)
+		}
+		return m, openEyesCmd()
 
 	case logLineMsg:
 		return m.appendLine(string(msg)), nil
@@ -191,59 +184,4 @@ func (m model) resize(w, h int) model {
 	m.vp.SetContent(m.contentView())
 	m.vp.GotoBottom()
 	return m
-}
-
-func (m model) contentView() string {
-	width := m.vp.Width()
-	if width <= 0 {
-		return strings.Join(m.lines, "\n")
-	}
-
-	wrapped := make([]string, len(m.lines))
-	for i, line := range m.lines {
-		wrapped[i] = lipgloss.Wrap(line, width, "")
-	}
-	return strings.Join(wrapped, "\n")
-}
-
-func (m model) boxWidth() int {
-	if m.width > minAvatarWidth {
-		return m.width - avatarWidth
-	}
-	return max(1, m.width)
-}
-
-func (m model) footerView() string {
-	width := m.boxWidth()
-	box := boxStyle.Width(width).Render(m.input.View())
-	stack := lipgloss.JoinVertical(lipgloss.Left, box, m.hintView(width))
-	if m.width <= minAvatarWidth {
-		return stack
-	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, avatarStyle.Render(avatarArt), stack)
-}
-
-func (m model) hintView(width int) string {
-	style := hintStyle.MaxWidth(max(1, width))
-	if m.busy {
-		return style.Render("  " + m.name + " is thinking…")
-	}
-	if matches := matchingCommands(m.input.Value()); len(matches) > 0 {
-		hints := make([]string, len(matches))
-		for i, name := range matches {
-			hints[i] = "/" + name
-		}
-		return style.Render("  " + strings.Join(hints, "  "))
-	}
-	return style.Render("  / for commands · " + keyCtrlC + " to quit")
-}
-
-func (m model) View() tea.View {
-	content := "\n  Starting " + m.name + "…"
-	if m.ready {
-		content = lipgloss.JoinVertical(lipgloss.Left, m.vp.View(), m.footerView())
-	}
-	v := tea.NewView(content)
-	v.AltScreen = true
-	return v
 }
