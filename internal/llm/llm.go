@@ -12,7 +12,7 @@ import (
 )
 
 type Provider interface {
-	Chat(ctx context.Context, messages []Message, tools ...tool.Tool) (Response, error)
+	Chat(ctx context.Context, messages []Message, onDelta StreamFunc, tools ...tool.Tool) (Response, error)
 	Shutdown()
 }
 

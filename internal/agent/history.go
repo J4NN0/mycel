@@ -105,7 +105,7 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 	result, err := a.provider.Chat(ctx, []llm.Message{
 		{Role: schemas.ChatMessageRoleSystem, Content: compactPrompt},
 		{Role: schemas.ChatMessageRoleUser, Content: buildSummaryInput(priorSummary, body)},
-	})
+	}, nil)
 	if err != nil {
 		return fmt.Errorf("summarize history: %w", err)
 	}

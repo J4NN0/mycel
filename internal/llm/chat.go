@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/J4NN0/mycel/internal/tool"
 	"github.com/maximhq/bifrost/core/schemas"
@@ -21,82 +22,40 @@ type Response struct {
 	TotalTokens      int
 }
 
-func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) (Response, error) {
+// StreamFunc receives the assistant content as it arrives. It may be nil, in
+// which case the response is only returned once complete.
+type StreamFunc func(delta string)
+
+type streamRound struct {
+	content   string
+	toolCalls []schemas.ChatAssistantMessageToolCall
+	usage     *schemas.BifrostLLMUsage
+}
+
+func (l *llm) Chat(ctx context.Context, messages []Message, onDelta StreamFunc, tools ...tool.Tool) (Response, error) {
 	chatMessages := initMessages(messages)
 	chatTools, toolMap := initTools(tools)
-
-	var params *schemas.ChatParameters
-	if len(chatTools) > 0 {
-		params = &schemas.ChatParameters{
-			Tools: chatTools,
-			ToolChoice: &schemas.ChatToolChoice{
-				ChatToolChoiceStr: schemas.Ptr("auto"),
-			},
-		}
-	}
+	params := initParams(chatTools)
 
 	for {
-		response, err := l.bifrost.ChatCompletionRequest(schemas.NewBifrostContext(ctx, schemas.NoDeadline), &schemas.BifrostChatRequest{
-			Provider: l.provider,
-			Model:    l.model,
-			Input:    chatMessages,
-			Params:   params,
-		})
+		r, err := l.streamRequest(ctx, chatMessages, params, onDelta)
 		if err != nil {
-			return Response{}, fmt.Errorf("chat completion request: %v", err)
-		}
-		if len(response.Choices) == 0 {
-			return Response{}, fmt.Errorf("chat completion returned no choices")
+			return Response{}, err
 		}
 
-		choice := response.Choices[0]
-		if choice.ChatNonStreamResponseChoice == nil || choice.Message == nil {
-			return Response{}, fmt.Errorf("chat completion returned no assistant message")
-		}
-
-		var toolCalls []schemas.ChatAssistantMessageToolCall
-		if choice.Message.ChatAssistantMessage != nil {
-			toolCalls = choice.Message.ChatAssistantMessage.ToolCalls
-		}
-		if len(toolCalls) == 0 {
-			if choice.Message.Content == nil || choice.Message.Content.ContentStr == nil {
+		if len(r.toolCalls) == 0 {
+			if r.content == "" {
 				return Response{}, fmt.Errorf("chat completion returned neither content nor tool calls")
 			}
-			return newResponse(*choice.Message.Content.ContentStr, response), nil
+			return newResponse(r.content, r.usage), nil
 		}
 
 		chatMessages = append(chatMessages, schemas.ChatMessage{
 			Role:                 schemas.ChatMessageRoleAssistant,
-			ChatAssistantMessage: &schemas.ChatAssistantMessage{ToolCalls: toolCalls},
+			ChatAssistantMessage: &schemas.ChatAssistantMessage{ToolCalls: r.toolCalls},
 		})
-
-		for _, tc := range toolCalls {
-			result, execErr := executeToolCall(ctx, toolMap, tc)
-
-			chatMsgResult := result
-			if execErr != nil {
-				errMsg := fmt.Sprintf("tool call %s failed: %v", *tc.ID, execErr)
-				chatMsgResult = errMsg
-				l.log.Errorf("%s", errMsg)
-			}
-
-			chatMessages = append(chatMessages, schemas.ChatMessage{
-				Role:            schemas.ChatMessageRoleTool,
-				Content:         &schemas.ChatMessageContent{ContentStr: schemas.Ptr(chatMsgResult)},
-				ChatToolMessage: &schemas.ChatToolMessage{ToolCallID: tc.ID},
-			})
-		}
+		chatMessages = append(chatMessages, l.runToolCalls(ctx, toolMap, r.toolCalls)...)
 	}
-}
-
-func newResponse(content string, response *schemas.BifrostChatResponse) Response {
-	r := Response{Content: content}
-	if response != nil && response.Usage != nil {
-		r.PromptTokens = response.Usage.PromptTokens
-		r.CompletionTokens = response.Usage.CompletionTokens
-		r.TotalTokens = response.Usage.TotalTokens
-	}
-	return r
 }
 
 func initMessages(messages []Message) []schemas.ChatMessage {
@@ -123,6 +82,107 @@ func initTools(tools []tool.Tool) ([]schemas.ChatTool, map[string]tool.Tool) {
 	}
 
 	return chatTools, toolMap
+}
+
+func initParams(chatTools []schemas.ChatTool) *schemas.ChatParameters {
+	if len(chatTools) == 0 {
+		return nil
+	}
+	return &schemas.ChatParameters{
+		Tools: chatTools,
+		ToolChoice: &schemas.ChatToolChoice{
+			ChatToolChoiceStr: schemas.Ptr("auto"),
+		},
+	}
+}
+
+func newResponse(content string, usage *schemas.BifrostLLMUsage) Response {
+	r := Response{Content: content}
+	if usage != nil {
+		r.PromptTokens = usage.PromptTokens
+		r.CompletionTokens = usage.CompletionTokens
+		r.TotalTokens = usage.TotalTokens
+	}
+	return r
+}
+
+func (l *llm) streamRequest(ctx context.Context, messages []schemas.ChatMessage, params *schemas.ChatParameters, onDelta StreamFunc) (streamRound, error) {
+	stream, err := l.bifrost.ChatCompletionStreamRequest(schemas.NewBifrostContext(ctx, schemas.NoDeadline), &schemas.BifrostChatRequest{
+		Provider: l.provider,
+		Model:    l.model,
+		Input:    messages,
+		Params:   params,
+	})
+	if err != nil {
+		return streamRound{}, fmt.Errorf("chat completion stream request: %v", err)
+	}
+
+	return collectStreamRound(stream, onDelta)
+}
+
+// collectStreamRound assembles the chunks of a stream, handing content to onDelta as it arrives.
+func collectStreamRound(stream chan *schemas.BifrostStreamChunk, onDelta StreamFunc) (streamRound, error) {
+	var (
+		r       streamRound
+		content strings.Builder
+	)
+
+	for chunk := range stream {
+		if chunk.BifrostError != nil {
+			return streamRound{}, fmt.Errorf("chat completion stream: %v", chunk.BifrostError)
+		}
+		if chunk.BifrostChatResponse == nil {
+			continue
+		}
+		// Usage come to its own chunk, at the end of the stream
+		if chunk.BifrostChatResponse.Usage != nil {
+			r.usage = chunk.BifrostChatResponse.Usage
+		}
+
+		delta := streamDelta(chunk.BifrostChatResponse)
+		if delta == nil {
+			continue
+		}
+		if delta.Content != nil {
+			content.WriteString(*delta.Content)
+			if onDelta != nil {
+				onDelta(*delta.Content)
+			}
+		}
+		r.toolCalls = append(r.toolCalls, delta.ToolCalls...)
+	}
+
+	r.content = content.String()
+
+	return r, nil
+}
+
+// streamDelta returns the partial message a chunk carries, if it carries one.
+func streamDelta(response *schemas.BifrostChatResponse) *schemas.ChatStreamResponseChoiceDelta {
+	if len(response.Choices) == 0 || response.Choices[0].ChatStreamResponseChoice == nil {
+		return nil
+	}
+	return response.Choices[0].ChatStreamResponseChoice.Delta
+}
+
+func (l *llm) runToolCalls(ctx context.Context, toolMap map[string]tool.Tool, toolCalls []schemas.ChatAssistantMessageToolCall) []schemas.ChatMessage {
+	messages := make([]schemas.ChatMessage, 0, len(toolCalls))
+
+	for _, tc := range toolCalls {
+		result, err := executeToolCall(ctx, toolMap, tc)
+		if err != nil {
+			result = fmt.Sprintf("tool call %s failed: %v", *tc.ID, err)
+			l.log.Errorf("%s", result)
+		}
+
+		messages = append(messages, schemas.ChatMessage{
+			Role:            schemas.ChatMessageRoleTool,
+			Content:         &schemas.ChatMessageContent{ContentStr: schemas.Ptr(result)},
+			ChatToolMessage: &schemas.ChatToolMessage{ToolCallID: tc.ID},
+		})
+	}
+
+	return messages
 }
 
 func executeToolCall(ctx context.Context, toolMap map[string]tool.Tool, tc schemas.ChatAssistantMessageToolCall) (string, error) {

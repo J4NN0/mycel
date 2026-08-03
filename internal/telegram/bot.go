@@ -62,7 +62,8 @@ func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler 
 	sessionID := fmt.Sprintf("%d", msg.Chat.ID)
 	b.log.Debugf("[%s] New message from %s: %s", sessionID, msg.From.UserName, msg.Text)
 
-	response, err := handler(ctx, sessionID, msg.Text)
+	// No streaming: Telegram rate-limits message edits, so the reply is sent in one go.
+	response, err := handler(ctx, sessionID, msg.Text, nil)
 	if err != nil {
 		b.log.Warningf("handler failed: %v", err)
 		return

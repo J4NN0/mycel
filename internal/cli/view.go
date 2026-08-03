@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"slices"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -30,13 +31,18 @@ func (m model) View() tea.View {
 }
 
 func (m model) contentView() string {
-	width := m.vp.Width()
-	if width <= 0 {
-		return strings.Join(m.lines, "\n")
+	lines := m.lines
+	if m.partial != "" {
+		lines = append(slices.Clip(m.lines), speakerLine(nameStyle, m.name, m.partial))
 	}
 
-	wrapped := make([]string, len(m.lines))
-	for i, line := range m.lines {
+	width := m.vp.Width()
+	if width <= 0 {
+		return strings.Join(lines, "\n")
+	}
+
+	wrapped := make([]string, len(lines))
+	for i, line := range lines {
 		wrapped[i] = lipgloss.Wrap(line, width, "")
 	}
 	return strings.Join(wrapped, "\n")

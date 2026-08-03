@@ -33,9 +33,24 @@ const (
 
 type logLineMsg string
 
+// deltaMsg is a fragment of the reply currently being generated.
+type deltaMsg string
+
 type replyMsg struct {
 	response string
 	err      error
+}
+
+// waitForDelta feeds the next streamed fragment into the update loop. The stream
+// channel is unbuffered, so the reply cannot outrun what has been rendered.
+func waitForDelta(stream chan string) tea.Cmd {
+	return func() tea.Msg {
+		delta, ok := <-stream
+		if !ok {
+			return nil
+		}
+		return deltaMsg(delta)
+	}
 }
 
 type logWriter struct {
@@ -57,6 +72,8 @@ type model struct {
 	vp       viewport.Model
 	input    textinput.Model
 	lines    []string
+	stream   chan string
+	partial  string
 	width    int
 	ready    bool
 	busy     bool
@@ -101,8 +118,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case logLineMsg:
 		return m.appendLine(string(msg)), nil
 
+	case deltaMsg:
+		m.partial += string(msg)
+		return m.sync(), waitForDelta(m.stream)
+
 	case replyMsg:
 		m.busy = false
+		m.partial = ""
 		if msg.err != nil {
 			m = m.appendLine(errorStyle.Render("error: " + msg.err.Error()))
 		} else {
@@ -151,12 +173,22 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 	m = m.appendLine(speakerLine(userStyle, userLabel, text))
 	m.input.Reset()
 	m.busy = true
+	m.stream = make(chan string)
 
-	ctx, handler := m.ctx, m.handler
-	return m, func() tea.Msg {
-		response, err := handler(ctx, sessionID, text)
-		return replyMsg{response: response, err: err}
-	}
+	ctx, handler, stream := m.ctx, m.handler, m.stream
+	return m, tea.Batch(
+		func() tea.Msg {
+			defer close(stream)
+			response, err := handler(ctx, sessionID, text, func(delta string) {
+				select {
+				case stream <- delta:
+				case <-ctx.Done():
+				}
+			})
+			return replyMsg{response: response, err: err}
+		},
+		waitForDelta(stream),
+	)
 }
 
 func (m model) appendLine(s string) model {
@@ -164,6 +196,10 @@ func (m model) appendLine(s string) model {
 	if len(m.lines) > maxLines {
 		m.lines = m.lines[len(m.lines)-maxLines:]
 	}
+	return m.sync()
+}
+
+func (m model) sync() model {
 	if !m.ready {
 		return m
 	}

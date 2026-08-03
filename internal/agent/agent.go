@@ -19,7 +19,8 @@ type Platform interface {
 }
 
 // MessageHandler is the callback a Platform uses to deliver an incoming message and receive the agent's reply.
-type MessageHandler func(ctx context.Context, sessionID, text string) (string, error)
+// A non-nil onDelta also receives the reply in fragments, as the model generates it.
+type MessageHandler func(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (string, error)
 
 type Agent struct {
 	log                logger.Logger
@@ -72,7 +73,7 @@ func (a *Agent) Run(ctx context.Context) error {
 	return <-errCh
 }
 
-func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, error) {
+func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -89,7 +90,7 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string) (string, erro
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
 
 	a.log.Debugf("[%s] Generating response ...", sessionID)
-	result, err := a.provider.Chat(ctx, messages, a.tools...)
+	result, err := a.provider.Chat(ctx, messages, onDelta, a.tools...)
 	if err != nil {
 		return "", fmt.Errorf("agent reply: %w", err)
 	}
