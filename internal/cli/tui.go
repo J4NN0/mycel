@@ -16,6 +16,7 @@ const (
 	sessionID    = "terminal"
 	maxLines     = 5000
 	promptSymbol = "> "
+	userLabel    = "You"
 	welcomeLine  = "Terminal chat ready. Type a message and press Enter. Type / to see available commands."
 )
 
@@ -105,7 +106,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m = m.appendLine(errorStyle.Render("error: " + msg.err.Error()))
 		} else {
-			m = m.appendLine(nameStyle.Render(m.name+": ") + msg.response)
+			m = m.appendLine(speakerLine(nameStyle, m.name, msg.response))
 		}
 		return m, nil
 
@@ -147,7 +148,7 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	m = m.appendLine(promptStyle.Render(promptSymbol) + text)
+	m = m.appendLine(speakerLine(userStyle, userLabel, text))
 	m.input.Reset()
 	m.busy = true
 

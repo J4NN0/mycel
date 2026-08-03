@@ -8,12 +8,16 @@ import (
 )
 
 var (
-	boxStyle    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("63")).Padding(0, 1)
-	hintStyle   = lipgloss.NewStyle().Faint(true)
-	promptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Bold(true)
-	nameStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true)
-	errorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+	boxStyle   = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("63")).Padding(0, 1)
+	hintStyle  = lipgloss.NewStyle().Faint(true)
+	userStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Bold(true)
+	nameStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true)
+	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 )
+
+func speakerLine(style lipgloss.Style, speaker, text string) string {
+	return style.Render(speaker+": ") + text
+}
 
 func (m model) View() tea.View {
 	content := "\n  Starting " + m.name + "…"
