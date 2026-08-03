@@ -22,21 +22,17 @@ type Response struct {
 }
 
 func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) (Response, error) {
-	chatMessages := make([]schemas.ChatMessage, len(messages))
-	for i, m := range messages {
-		chatMessages[i] = schemas.ChatMessage{
-			Role: m.Role,
-			Content: &schemas.ChatMessageContent{
-				ContentStr: schemas.Ptr(m.Content),
-			},
-		}
-	}
-
+	chatMessages := initMessages(messages)
 	chatTools, toolMap := initTools(tools)
 
 	var params *schemas.ChatParameters
 	if len(chatTools) > 0 {
-		params = &schemas.ChatParameters{Tools: chatTools}
+		params = &schemas.ChatParameters{
+			Tools: chatTools,
+			ToolChoice: &schemas.ChatToolChoice{
+				ChatToolChoiceStr: schemas.Ptr("auto"),
+			},
+		}
 	}
 
 	for {
@@ -49,13 +45,26 @@ func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) 
 		if err != nil {
 			return Response{}, fmt.Errorf("chat completion request: %v", err)
 		}
+		if len(response.Choices) == 0 {
+			return Response{}, fmt.Errorf("chat completion returned no choices")
+		}
 
 		choice := response.Choices[0]
-		if choice.FinishReason == nil || *choice.FinishReason != string(schemas.BifrostFinishReasonToolCalls) {
+		if choice.ChatNonStreamResponseChoice == nil || choice.Message == nil {
+			return Response{}, fmt.Errorf("chat completion returned no assistant message")
+		}
+
+		var toolCalls []schemas.ChatAssistantMessageToolCall
+		if choice.Message.ChatAssistantMessage != nil {
+			toolCalls = choice.Message.ChatAssistantMessage.ToolCalls
+		}
+		if len(toolCalls) == 0 {
+			if choice.Message.Content == nil || choice.Message.Content.ContentStr == nil {
+				return Response{}, fmt.Errorf("chat completion returned neither content nor tool calls")
+			}
 			return newResponse(*choice.Message.Content.ContentStr, response), nil
 		}
 
-		toolCalls := choice.Message.ChatAssistantMessage.ToolCalls
 		chatMessages = append(chatMessages, schemas.ChatMessage{
 			Role:                 schemas.ChatMessageRoleAssistant,
 			ChatAssistantMessage: &schemas.ChatAssistantMessage{ToolCalls: toolCalls},
@@ -66,7 +75,7 @@ func (l *llm) Chat(ctx context.Context, messages []Message, tools ...tool.Tool) 
 
 			chatMsgResult := result
 			if execErr != nil {
-				errMsg := fmt.Sprintf("tool %s failed: %v", *tc.Function.Name, execErr)
+				errMsg := fmt.Sprintf("tool call %s failed: %v", *tc.ID, execErr)
 				chatMsgResult = errMsg
 				l.log.Errorf("%s", errMsg)
 			}
@@ -90,9 +99,23 @@ func newResponse(content string, response *schemas.BifrostChatResponse) Response
 	return r
 }
 
+func initMessages(messages []Message) []schemas.ChatMessage {
+	chatMessages := make([]schemas.ChatMessage, len(messages))
+	for i, m := range messages {
+		chatMessages[i] = schemas.ChatMessage{
+			Role: m.Role,
+			Content: &schemas.ChatMessageContent{
+				ContentStr: schemas.Ptr(m.Content),
+			},
+		}
+	}
+	return chatMessages
+}
+
 func initTools(tools []tool.Tool) ([]schemas.ChatTool, map[string]tool.Tool) {
 	var chatTools []schemas.ChatTool
 	toolMap := make(map[string]tool.Tool, len(tools))
+
 	for _, t := range tools {
 		def := t.Definition()
 		chatTools = append(chatTools, def)
