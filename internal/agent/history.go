@@ -87,7 +87,7 @@ func (a *Agent) startNewConversation(ctx context.Context, sessionID string) erro
 		return err
 	}
 
-	a.log.Debugf("[%s] Started new conversation: %s", sessionID, conversationID)
+	a.log.Debugf("[%s] Started new conversation %s", sessionID, conversationID)
 
 	return nil
 }

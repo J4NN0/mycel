@@ -23,11 +23,18 @@ func speakerLine(style lipgloss.Style, speaker, text string) string {
 func (m model) View() tea.View {
 	content := "\n  Starting " + m.name + "…"
 	if m.ready {
-		content = lipgloss.JoinVertical(lipgloss.Left, m.vp.View(), m.footerView())
+		content = lipgloss.JoinVertical(lipgloss.Left, m.mainView(), m.footerView())
 	}
 	v := tea.NewView(content)
 	v.AltScreen = true
 	return v
+}
+
+func (m model) mainView() string {
+	if m.mode == modeResume {
+		return m.resumeList.View()
+	}
+	return m.vp.View()
 }
 
 func (m model) contentView() string {
@@ -67,6 +74,9 @@ func (m model) footerView() string {
 
 func (m model) hintView(width int) string {
 	style := hintStyle.MaxWidth(max(1, width))
+	if m.mode == modeResume {
+		return style.Render("  ↑/↓ select · enter to resume · esc to cancel")
+	}
 	if m.busy {
 		return style.Render("  " + m.name + " is thinking…")
 	}

@@ -10,6 +10,7 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/J4NN0/mycel/internal/llm"
+	"github.com/maximhq/bifrost/core/schemas"
 )
 
 const (
@@ -18,6 +19,11 @@ const (
 	convSeqKeyPrefix    = "conversation:seq:"
 )
 
+type ConversationSummary struct {
+	ID      string
+	Preview string
+}
+
 type History interface {
 	Load(ctx context.Context, sessionID, conversationID string) ([]llm.Message, error)
 	Len(ctx context.Context, sessionID, conversationID string) (int64, error)
@@ -25,6 +31,8 @@ type History interface {
 	Replace(ctx context.Context, sessionID, conversationID string, messages []llm.Message) error
 	ActiveConversation(ctx context.Context, sessionID string) (string, error)
 	NewConversation(ctx context.Context, sessionID string) (string, error)
+	SetActiveConversation(ctx context.Context, sessionID, conversationID string) error
+	ListConversations(ctx context.Context, sessionID, excludeID string, limit int) ([]ConversationSummary, error)
 }
 
 func (c *Client) Load(ctx context.Context, sessionID, conversationID string) ([]llm.Message, error) {
@@ -118,6 +126,75 @@ func (c *Client) NewConversation(ctx context.Context, sessionID string) (string,
 	}
 
 	return id, nil
+}
+
+func (c *Client) SetActiveConversation(ctx context.Context, sessionID, conversationID string) error {
+	n, err := c.Len(ctx, sessionID, conversationID)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("conversation %s has no messages", conversationID)
+	}
+
+	err = c.rdb.Set(ctx, activeConvKey(sessionID), conversationID, 0).Err()
+	if err != nil {
+		return fmt.Errorf("redis set active conversation: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) ListConversations(ctx context.Context, sessionID, excludeID string, limit int) ([]ConversationSummary, error) {
+	seqStr, err := c.rdb.Get(ctx, convSeqKey(sessionID)).Result()
+	if errors.Is(err, goredis.Nil) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("redis get conversation seq: %w", err)
+	}
+
+	seq, err := strconv.ParseInt(seqStr, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("parse conversation seq: %w", err)
+	}
+
+	var summaries []ConversationSummary
+	for id := seq; id >= 1 && len(summaries) < limit; id-- {
+		conversationID := strconv.FormatInt(id, 10)
+		if conversationID == excludeID {
+			continue
+		}
+
+		n, err := c.Len(ctx, sessionID, conversationID)
+		if err != nil {
+			return nil, err
+		}
+		if n == 0 {
+			continue
+		}
+
+		messages, err := c.Load(ctx, sessionID, conversationID)
+		if err != nil {
+			return nil, err
+		}
+
+		summaries = append(summaries, ConversationSummary{ID: conversationID, Preview: firstUserMessage(messages)})
+	}
+
+	return summaries, nil
+}
+
+func firstUserMessage(messages []llm.Message) string {
+	for _, m := range messages {
+		if m.Role == schemas.ChatMessageRoleUser {
+			return m.Content
+		}
+	}
+	if len(messages) > 0 {
+		return messages[len(messages)-1].Content
+	}
+	return ""
 }
 
 func historyKey(sessionID, conversationID string) string {

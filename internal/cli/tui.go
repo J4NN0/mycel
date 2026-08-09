@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
@@ -18,6 +19,13 @@ const (
 	promptSymbol = "> "
 	userLabel    = "You"
 	welcomeLine  = "Terminal chat ready. Type a message and press Enter. Type / to see available commands."
+)
+
+type mode int
+
+const (
+	modeChat mode = iota
+	modeResume
 )
 
 const (
@@ -37,8 +45,8 @@ type logLineMsg string
 type deltaMsg string
 
 type replyMsg struct {
-	response string
-	err      error
+	reply *agent.Reply
+	err   error
 }
 
 // waitForDelta feeds the next streamed fragment into the update loop. The stream
@@ -69,15 +77,17 @@ type model struct {
 	name    string
 	handler agent.MessageHandler
 
-	vp       viewport.Model
-	input    textinput.Model
-	lines    []string
-	stream   chan string
-	partial  string
-	width    int
-	ready    bool
-	busy     bool
-	eyesShut bool
+	vp         viewport.Model
+	input      textinput.Model
+	lines      []string
+	stream     chan string
+	partial    string
+	width      int
+	ready      bool
+	busy       bool
+	eyesShut   bool
+	mode       mode
+	resumeList list.Model
 }
 
 func newModel(ctx context.Context, name string, handler agent.MessageHandler) model {
@@ -125,12 +135,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case replyMsg:
 		m.busy = false
 		m.partial = ""
+		m.mode = modeChat
 		if msg.err != nil {
-			m = m.appendLine(errorStyle.Render("error: " + msg.err.Error()))
-		} else {
-			m = m.appendLine(speakerLine(nameStyle, m.name, msg.response))
+			return m.appendLine(errorStyle.Render("error: " + msg.err.Error())), nil
 		}
-		return m, nil
+		if len(msg.reply.Conversations) > 0 {
+			m.resumeList = newResumeList(resumeItems(msg.reply.Conversations), m.vp.Width(), m.vp.Height())
+			m.mode = modeResume
+			return m, nil
+		}
+		return m.appendLine(speakerLine(nameStyle, m.name, msg.reply.Text)), nil
 
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
@@ -142,8 +156,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if msg.String() == keyCtrlC {
+		return m, tea.Quit
+	}
+
+	if m.mode == modeResume {
+		return m.handleResumeKey(msg)
+	}
+
 	switch msg.String() {
-	case keyCtrlC, keyEsc:
+	case keyEsc:
 		return m, tea.Quit
 	case keyEnter:
 		return m.submit()
@@ -164,6 +186,29 @@ func (m model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
+func (m model) handleResumeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case keyEsc:
+		m.mode = modeChat
+		return m, nil
+	case keyEnter:
+		item, ok := m.resumeList.SelectedItem().(resumeItem)
+		if !ok {
+			return m, nil
+		}
+		m.busy = true
+		ctx, reply := m.ctx, m.handler
+		return m, func() tea.Msg {
+			result, err := reply(ctx, sessionID, "/resume "+item.id, nil)
+			return replyMsg{reply: result, err: err}
+		}
+	default:
+		var cmd tea.Cmd
+		m.resumeList, cmd = m.resumeList.Update(msg)
+		return m, cmd
+	}
+}
+
 func (m model) submit() (tea.Model, tea.Cmd) {
 	text := strings.TrimSpace(m.input.Value())
 	if text == "" || m.busy {
@@ -175,17 +220,17 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 	m.busy = true
 	m.stream = make(chan string)
 
-	ctx, handler, stream := m.ctx, m.handler, m.stream
+	ctx, reply, stream := m.ctx, m.handler, m.stream
 	return m, tea.Batch(
 		func() tea.Msg {
 			defer close(stream)
-			response, err := handler(ctx, sessionID, text, func(delta string) {
+			result, err := reply(ctx, sessionID, text, func(delta string) {
 				select {
 				case stream <- delta:
 				case <-ctx.Done():
 				}
 			})
-			return replyMsg{response: response, err: err}
+			return replyMsg{reply: result, err: err}
 		},
 		waitForDelta(stream),
 	)
@@ -220,5 +265,8 @@ func (m model) resize(w, h int) model {
 	m.vp.SetHeight(max(1, h-footerHeight))
 	m.vp.SetContent(m.contentView())
 	m.vp.GotoBottom()
+	if m.mode == modeResume {
+		m.resumeList.SetSize(w, max(1, h-footerHeight))
+	}
 	return m
 }

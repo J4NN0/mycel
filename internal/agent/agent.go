@@ -18,9 +18,20 @@ type Platform interface {
 	Run(ctx context.Context, handler MessageHandler) error
 }
 
-// MessageHandler is the callback a Platform uses to deliver an incoming message and receive the agent's reply.
-// A non-nil onDelta also receives the reply in fragments, as the model generates it.
-type MessageHandler func(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (string, error)
+// MessageHandler is the callback a Platform uses to deliver an incoming message and receive the
+// agent's reply. A non-nil onDelta also receives the reply text in fragments, as the model
+// generates it (commands never stream, only normal chat replies do).
+type MessageHandler func(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (*Reply, error)
+
+// Reply is what a Platform gets back for a turn.
+// Text is a normal reply to display as-is.
+// Conversations is set instead when the platform should let the user pick one — e.g. /resume with
+// no argument — via whatever interactive UI it has; picking one is just another MessageHandler
+// call with the chosen ID appended to the same command.
+type Reply struct {
+	Text          string
+	Conversations []Conversation
+}
 
 type Agent struct {
 	log                logger.Logger
@@ -73,23 +84,25 @@ func (a *Agent) Run(ctx context.Context) error {
 	return <-errCh
 }
 
-func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (string, error) {
+func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (*Reply, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	response, isCmd := a.handleCommand(ctx, sessionID, text)
-	if isCmd {
-		return response, nil
+	cmdReply, err := a.handleCommand(ctx, sessionID, text)
+	if err != nil {
+		return nil, err
+	}
+	if cmdReply != nil {
+		return cmdReply, nil
 	}
 
 	conversationID, err := a.history.ActiveConversation(ctx, sessionID)
 	if err != nil {
-		return "", fmt.Errorf("resolve active conversation: %w", err)
+		return nil, fmt.Errorf("resolve active conversation: %w", err)
 	}
-
 	messages, err := a.loadHistory(ctx, sessionID, conversationID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	messages = a.withToolPolicy(messages)
 	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
@@ -97,15 +110,16 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.S
 	a.log.Debugf("[%s] Generating response ...", sessionID)
 	result, err := a.provider.Chat(ctx, messages, onDelta, a.tools...)
 	if err != nil {
-		return "", fmt.Errorf("agent reply: %w", err)
+		return nil, fmt.Errorf("agent reply: %w", err)
 	}
 
+	a.log.Debugf("[%s] Storing history ...", sessionID)
 	err = a.storeHistory(ctx, sessionID, conversationID, text, result)
 	if err != nil {
 		a.log.Errorf("[%s] Failed to store history: %v", sessionID, err)
 	}
 
-	return result.Content, nil
+	return &Reply{Text: result.Content}, nil
 }
 
 func (a *Agent) withToolPolicy(messages []llm.Message) []llm.Message {
