@@ -9,10 +9,10 @@ import (
 
 const (
 	fileExtension = ".txt"
-	purposeName   = "purpose"
-	objectiveName = "objective"
-	compactName   = "compact"
-	toolsName     = "tools"
+	purposeName = "purpose"
+	goalName    = "goal"
+	compactName = "compact"
+	toolsName   = "tools"
 )
 
 const (
@@ -42,8 +42,8 @@ func (m *Manager) LoadSystem() (string, error) {
 	return fmt.Sprintf("%s\n\n## How you sound\n\n%s", strings.TrimSpace(purpose), strings.TrimSpace(persona)), nil
 }
 
-func (m *Manager) LoadObjective() (string, error) {
-	return m.loadFile(objectiveName)
+func (m *Manager) LoadGoal() (string, error) {
+	return m.loadFile(goalName)
 }
 
 func (m *Manager) LoadCompact() (string, error) {
