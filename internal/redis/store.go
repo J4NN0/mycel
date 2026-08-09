@@ -13,18 +13,12 @@ import (
 	"github.com/maximhq/bifrost/core/schemas"
 )
 
-const (
-	historyKeyPrefix    = "history:"
-	activeConvKeyPrefix = "conversation:active:"
-	convSeqKeyPrefix    = "conversation:seq:"
-)
-
 type ConversationSummary struct {
 	ID      string
 	Preview string
 }
 
-type History interface {
+type Store interface {
 	Load(ctx context.Context, sessionID, conversationID string) ([]llm.Message, error)
 	Len(ctx context.Context, sessionID, conversationID string) (int64, error)
 	Append(ctx context.Context, sessionID, conversationID string, messages ...llm.Message) error
@@ -99,6 +93,18 @@ func (c *Client) Replace(ctx context.Context, sessionID, conversationID string, 
 	}
 
 	return nil
+}
+
+func encodeMessages(messages []llm.Message) ([]any, error) {
+	entries := make([]any, len(messages))
+	for i, m := range messages {
+		data, err := json.Marshal(m)
+		if err != nil {
+			return nil, fmt.Errorf("marshal history entry: %w", err)
+		}
+		entries[i] = data
+	}
+	return entries, nil
 }
 
 func (c *Client) ActiveConversation(ctx context.Context, sessionID string) (string, error) {
@@ -195,28 +201,4 @@ func firstUserMessage(messages []llm.Message) string {
 		return messages[len(messages)-1].Content
 	}
 	return ""
-}
-
-func historyKey(sessionID, conversationID string) string {
-	return fmt.Sprintf("%s%s:%s", historyKeyPrefix, sessionID, conversationID)
-}
-
-func activeConvKey(sessionID string) string {
-	return activeConvKeyPrefix + sessionID
-}
-
-func convSeqKey(sessionID string) string {
-	return convSeqKeyPrefix + sessionID
-}
-
-func encodeMessages(messages []llm.Message) ([]any, error) {
-	entries := make([]any, len(messages))
-	for i, m := range messages {
-		data, err := json.Marshal(m)
-		if err != nil {
-			return nil, fmt.Errorf("marshal history entry: %w", err)
-		}
-		entries[i] = data
-	}
-	return entries, nil
 }

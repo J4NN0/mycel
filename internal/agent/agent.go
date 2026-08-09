@@ -36,7 +36,7 @@ type Reply struct {
 type Agent struct {
 	log                logger.Logger
 	provider           llm.Provider
-	history            redis.History
+	history            redis.Store
 	promptManager      *prompt.Manager
 	tools              []tool.Tool
 	maxHistoryMessages int
@@ -45,7 +45,7 @@ type Agent struct {
 	mu                 sync.Mutex
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.History, promptManager *prompt.Manager, maxHistoryMessages, maxHistoryTokens int, agentTools []tool.Tool, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.Store, promptManager *prompt.Manager, maxHistoryMessages, maxHistoryTokens int, agentTools []tool.Tool, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,
