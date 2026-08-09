@@ -25,7 +25,7 @@ type MessageHandler func(ctx context.Context, sessionID, text string, onDelta ll
 type Agent struct {
 	log                logger.Logger
 	provider           llm.Provider
-	history            redis.List
+	history            redis.History
 	promptManager      *prompt.Manager
 	tools              []tool.Tool
 	maxHistoryMessages int
@@ -34,7 +34,7 @@ type Agent struct {
 	mu                 sync.Mutex
 }
 
-func New(log logger.Logger, provider llm.Provider, history redis.List, promptManager *prompt.Manager, maxHistoryMessages, maxHistoryTokens int, agentTools []tool.Tool, platforms ...Platform) *Agent {
+func New(log logger.Logger, provider llm.Provider, history redis.History, promptManager *prompt.Manager, maxHistoryMessages, maxHistoryTokens int, agentTools []tool.Tool, platforms ...Platform) *Agent {
 	return &Agent{
 		log:                log,
 		provider:           provider,
@@ -82,7 +82,12 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.S
 		return response, nil
 	}
 
-	messages, err := a.loadHistory(ctx, sessionID)
+	conversationID, err := a.history.ActiveConversation(ctx, sessionID)
+	if err != nil {
+		return "", fmt.Errorf("resolve active conversation: %w", err)
+	}
+
+	messages, err := a.loadHistory(ctx, sessionID, conversationID)
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +100,7 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.S
 		return "", fmt.Errorf("agent reply: %w", err)
 	}
 
-	err = a.storeHistory(ctx, sessionID, text, result)
+	err = a.storeHistory(ctx, sessionID, conversationID, text, result)
 	if err != nil {
 		a.log.Errorf("[%s] Failed to store history: %v", sessionID, err)
 	}

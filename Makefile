@@ -36,7 +36,6 @@ lint:
 # === DEVELOPMENT =======================================================
 pre-commit: mod-tidy fmt build lint vet
 
-# Start dependencies (Redis) via Docker and run the application locally
 run:
 	@if [ ! -f .env ]; then \
 		echo "---> No .env found; creating one from .env.sample"; \
@@ -45,7 +44,8 @@ run:
 		exit 1; \
 	fi
 	@echo "---> Starting dependencies"
-	docker compose up -d --wait redis
+	docker compose up -d --wait redis redis-commander
+	@echo "---> Redis UI available at http://localhost:8081"
 	@echo "---> Running $(PROJECT_NAME)"
 	set -a && . ./.env && set +a && go run cmd/$(PROJECT_NAME)/main.go
 .PHONY: run

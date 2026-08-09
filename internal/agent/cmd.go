@@ -22,7 +22,7 @@ type Command struct {
 var Commands = []Command{
 	{Name: cmdStart, Description: "Start interacting with Mycel"},
 	{Name: cmdHelp, Description: "Show available commands"},
-	{Name: cmdClear, Description: "Reset the conversation history"},
+	{Name: cmdClear, Description: "Start a new conversation"},
 	{Name: cmdGoal, Description: "Give Mycel a goal to work toward autonomously"},
 	{Name: cmdModel, Description: "Show which model is currently in use"},
 }
@@ -41,12 +41,12 @@ func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (stri
 	case cmdHelp:
 		return buildHelp(), true
 	case cmdClear:
-		err := a.clearHistory(ctx, sessionID)
+		err := a.startNewConversation(ctx, sessionID)
 		if err != nil {
-			a.log.Errorf("[%s] Failed to clear history: %v", sessionID, err)
-			return "Failed to clear conversation history.", true
+			a.log.Errorf("[%s] Failed to start new conversation: %v", sessionID, err)
+			return "Failed to start a new conversation.", true
 		}
-		return "Conversation history cleared.", true
+		return "Started a new conversation.", true
 	case cmdGoal:
 		if arg == "" {
 			return "Usage: /goal <what you want me to work toward>", true

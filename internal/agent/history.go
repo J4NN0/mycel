@@ -14,8 +14,8 @@ const (
 	summaryPrefix      = "Summary of previous conversation:\n"
 )
 
-func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Message, error) {
-	messages, err := a.history.Load(ctx)
+func (a *Agent) loadHistory(ctx context.Context, sessionID, conversationID string) ([]llm.Message, error) {
+	messages, err := a.history.Load(ctx, sessionID, conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("load history: %w", err)
 	}
@@ -26,7 +26,7 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 		}
 
 		messages = []llm.Message{{Role: schemas.ChatMessageRoleSystem, Content: systemPrompt}}
-		err = a.history.Append(ctx, messages...)
+		err = a.history.Append(ctx, sessionID, conversationID, messages...)
 		if err != nil {
 			return nil, fmt.Errorf("seed history: %w", err)
 		}
@@ -37,8 +37,8 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID string) ([]llm.Messag
 	return messages, nil
 }
 
-func (a *Agent) storeHistory(ctx context.Context, sessionID, text string, result llm.Response) error {
-	err := a.history.Append(ctx,
+func (a *Agent) storeHistory(ctx context.Context, sessionID, conversationID, text string, result llm.Response) error {
+	err := a.history.Append(ctx, sessionID, conversationID,
 		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: result.Content},
 	)
@@ -46,18 +46,18 @@ func (a *Agent) storeHistory(ctx context.Context, sessionID, text string, result
 		return fmt.Errorf("append history: %w", err)
 	}
 
-	count, err := a.history.Len(ctx)
+	count, err := a.history.Len(ctx, sessionID, conversationID)
 	if err != nil {
 		return fmt.Errorf("count history: %w", err)
 	}
 
 	if a.shouldCompact(count, result.PromptTokens) {
-		messages, err := a.history.Load(ctx)
+		messages, err := a.history.Load(ctx, sessionID, conversationID)
 		if err != nil {
 			return fmt.Errorf("load history: %w", err)
 		}
 
-		err = a.compactHistory(ctx, sessionID, messages)
+		err = a.compactHistory(ctx, sessionID, conversationID, messages)
 		if err != nil {
 			a.log.Errorf("[%s] Failed to compact history: %v", sessionID, err)
 		}
@@ -81,18 +81,18 @@ func (a *Agent) shouldCompact(count int64, promptTokens int) bool {
 	return count > int64(a.maxHistoryMessages)
 }
 
-func (a *Agent) clearHistory(ctx context.Context, sessionID string) error {
-	err := a.history.Clear(ctx)
+func (a *Agent) startNewConversation(ctx context.Context, sessionID string) error {
+	conversationID, err := a.history.NewConversation(ctx, sessionID)
 	if err != nil {
 		return err
 	}
 
-	a.log.Debugf("[%s] History cleared", sessionID)
+	a.log.Debugf("[%s] Started new conversation: %s", sessionID, conversationID)
 
 	return nil
 }
 
-func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages []llm.Message) error {
+func (a *Agent) compactHistory(ctx context.Context, sessionID, conversationID string, messages []llm.Message) error {
 	a.log.Debugf("[%s] Compacting history (%d messages) ...", sessionID, len(messages))
 
 	systemPrompt, priorSummary, body := splitForCompaction(messages)
@@ -112,7 +112,7 @@ func (a *Agent) compactHistory(ctx context.Context, sessionID string, messages [
 
 	compacted := assembleCompacted(systemPrompt, result.Content, messages)
 
-	err = a.history.Replace(ctx, compacted)
+	err = a.history.Replace(ctx, sessionID, conversationID, compacted)
 	if err != nil {
 		return fmt.Errorf("save compacted history: %w", err)
 	}
