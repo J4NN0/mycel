@@ -13,6 +13,7 @@ import (
 
 type Provider interface {
 	Chat(ctx context.Context, messages []Message, onDelta StreamFunc, tools ...tool.Tool) (Response, error)
+	Model() string
 	Shutdown()
 }
 
@@ -47,6 +48,10 @@ func NewProvider(log logger.Logger, config config.Config) (Provider, error) {
 		bifrost:  bifrostClient,
 		model:    config.LlmModel,
 	}, nil
+}
+
+func (l *llm) Model() string {
+	return fmt.Sprintf("%s/%s", l.provider, l.model)
 }
 
 func (l *llm) Shutdown() {

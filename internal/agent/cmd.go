@@ -11,6 +11,7 @@ const (
 	cmdHelp      = "help"
 	cmdClear     = "clear"
 	cmdObjective = "objective"
+	cmdModel     = "model"
 )
 
 type Command struct {
@@ -23,6 +24,7 @@ var Commands = []Command{
 	{Name: cmdHelp, Description: "Show available commands"},
 	{Name: cmdClear, Description: "Reset the conversation history"},
 	{Name: cmdObjective, Description: "Give Mycel an objective to work toward autonomously"},
+	{Name: cmdModel, Description: "Show which model is currently in use"},
 }
 
 func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (string, bool) {
@@ -51,6 +53,8 @@ func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (stri
 		}
 		go a.runObjective(ctx, arg)
 		return "Objective accepted. Working on it…", true
+	case cmdModel:
+		return fmt.Sprintf("Currently running on %s", a.provider.Model()), true
 	}
 
 	return "", false
