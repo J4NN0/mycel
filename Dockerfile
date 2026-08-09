@@ -8,5 +8,4 @@ RUN go build -o mycel ./cmd/mycel
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/mycel .
-COPY prompts/ ./prompts/
 CMD ["./mycel"]

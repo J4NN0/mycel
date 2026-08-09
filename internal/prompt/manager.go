@@ -1,18 +1,24 @@
 package prompt
 
 import (
+	"embed"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io/fs"
+	"path"
 	"strings"
 )
 
+//go:embed data
+var embedded embed.FS
+
+const dataDir = "data"
+
 const (
 	fileExtension = ".txt"
-	purposeName = "purpose"
-	goalName    = "goal"
-	compactName = "compact"
-	toolsName   = "tools"
+	purposeName   = "purpose"
+	goalName      = "goal"
+	compactName   = "compact"
+	toolsName     = "tools"
 )
 
 const (
@@ -20,12 +26,16 @@ const (
 )
 
 type Manager struct {
-	basePath string
-	persona  string
+	fs      fs.FS
+	persona string
 }
 
-func NewManager(basePath, persona string) *Manager {
-	return &Manager{basePath: basePath, persona: persona}
+func NewManager(persona string) *Manager {
+	data, err := fs.Sub(embedded, dataDir)
+	if err != nil {
+		panic(fmt.Sprintf("prompt: embedded data missing: %v", err))
+	}
+	return &Manager{fs: data, persona: persona}
 }
 
 func (m *Manager) LoadSystem() (string, error) {
@@ -34,7 +44,7 @@ func (m *Manager) LoadSystem() (string, error) {
 		return "", err
 	}
 
-	persona, err := m.loadFile(filepath.Join(personasDir, m.persona))
+	persona, err := m.loadFile(path.Join(personasDir, m.persona))
 	if err != nil {
 		return "", err
 	}
@@ -55,8 +65,7 @@ func (m *Manager) LoadTools() (string, error) {
 }
 
 func (m *Manager) loadFile(name string) (string, error) {
-	path := filepath.Join(m.basePath, name+fileExtension)
-	data, err := os.ReadFile(path)
+	data, err := fs.ReadFile(m.fs, name+fileExtension)
 	if err != nil {
 		return "", fmt.Errorf("failed to load prompt %q: %w", name, err)
 	}

@@ -25,16 +25,39 @@ The tool is only registered when both `RESEND_API_KEY` and `RESEND_FROM` are set
 
 ## Run the Agent
 
+### Locally, from the repo
+
 Copy `.env.sample` to `.env` and fill in your values:
 
 ```sh
 cp .env.sample .env
 ```
 
-Then run the agent:
+Then run the agent (also starts Redis via Docker Compose):
 
 ```sh
 make run
+```
+
+### Installed, from anywhere
+
+Install the `mycel` binary to `$GOPATH/bin` (make sure that's on your `PATH`):
+
+```sh
+make install
+```
+
+Copy `.env.sample` to `~/.config/mycel/.env` and fill in your values:
+
+```sh
+mkdir -p ~/.config/mycel
+cp .env.sample ~/.config/mycel/.env
+```
+
+Make sure Redis is reachable (e.g. `docker compose up -d redis` from the repo, or `REDIS_ADDR` pointing at your own instance), then run from any directory:
+
+```sh
+mycel
 ```
 
 ## Resources

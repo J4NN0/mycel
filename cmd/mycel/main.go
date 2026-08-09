@@ -18,10 +18,7 @@ import (
 	"github.com/J4NN0/mycel/internal/tool"
 )
 
-const (
-	appName    = "Mycel"
-	promptsDir = "prompts"
-)
+const appName = "Mycel"
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -49,7 +46,7 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	promptManager := prompt.NewManager(promptsDir, appConfig.Persona)
+	promptManager := prompt.NewManager(appConfig.Persona)
 	platforms := loadPlatforms(log, appConfig)
 	agentTools := loadTools(log, appConfig)
 
