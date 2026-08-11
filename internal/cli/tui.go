@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"charm.land/bubbles/v2/list"
@@ -199,7 +200,7 @@ func (m model) handleResumeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.busy = true
 		ctx, reply := m.ctx, m.handler
 		return m, func() tea.Msg {
-			result, err := reply(ctx, sessionID, "/resume "+item.id, nil)
+			result, err := reply(ctx, sessionID, agent.Input{Text: "/resume " + item.id}, nil)
 			return replyMsg{reply: result, err: err}
 		}
 	default:
@@ -220,11 +221,20 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 	m.busy = true
 	m.stream = make(chan string)
 
+	images, failed := extractImages(text)
+	in := agent.Input{Text: text, Images: images}
+	if len(in.Images) > 0 {
+		m = m.appendLine(hintStyle.Render(fmt.Sprintf("  attached %d image(s)", len(in.Images))))
+	}
+	for _, path := range failed {
+		m = m.appendLine(errorStyle.Render("could not read image " + path))
+	}
+
 	ctx, reply, stream := m.ctx, m.handler, m.stream
 	return m, tea.Batch(
 		func() tea.Msg {
 			defer close(stream)
-			result, err := reply(ctx, sessionID, text, func(delta string) {
+			result, err := reply(ctx, sessionID, in, func(delta string) {
 				select {
 				case stream <- delta:
 				case <-ctx.Done():

@@ -13,6 +13,7 @@ import (
 type Message struct {
 	Role    schemas.ChatMessageRole
 	Content string
+	Images  []Image
 }
 
 type Response struct {
@@ -33,7 +34,10 @@ type streamRound struct {
 }
 
 func (l *llm) Chat(ctx context.Context, messages []Message, onDelta StreamFunc, tools ...tool.Tool) (Response, error) {
-	chatMessages := initMessages(messages)
+	chatMessages, err := l.initMessages(messages)
+	if err != nil {
+		return Response{}, err
+	}
 	chatTools, toolMap := initTools(tools)
 	params := initParams(chatTools)
 
@@ -47,7 +51,7 @@ func (l *llm) Chat(ctx context.Context, messages []Message, onDelta StreamFunc, 
 			if r.content == "" {
 				return Response{}, fmt.Errorf("chat completion returned neither content nor tool calls")
 			}
-			return newResponse(r.content, r.usage), nil
+			return buildResponse(r.content, r.usage), nil
 		}
 
 		chatMessages = append(chatMessages, schemas.ChatMessage{
@@ -58,17 +62,35 @@ func (l *llm) Chat(ctx context.Context, messages []Message, onDelta StreamFunc, 
 	}
 }
 
-func initMessages(messages []Message) []schemas.ChatMessage {
+func (l *llm) initMessages(messages []Message) ([]schemas.ChatMessage, error) {
 	chatMessages := make([]schemas.ChatMessage, len(messages))
 	for i, m := range messages {
+		if len(m.Images) == 0 {
+			chatMessages[i] = schemas.ChatMessage{
+				Role: m.Role,
+				Content: &schemas.ChatMessageContent{
+					ContentStr: schemas.Ptr(m.Content),
+				},
+			}
+			continue
+		}
+
+		if !l.supportsVision() {
+			return nil, fmt.Errorf("%w: %s", ErrVisionUnsupported, l.Model())
+		}
+
+		blocks, err := contentBlocks(m)
+		if err != nil {
+			return nil, fmt.Errorf("build image content: %w", err)
+		}
 		chatMessages[i] = schemas.ChatMessage{
 			Role: m.Role,
 			Content: &schemas.ChatMessageContent{
-				ContentStr: schemas.Ptr(m.Content),
+				ContentBlocks: blocks,
 			},
 		}
 	}
-	return chatMessages
+	return chatMessages, nil
 }
 
 func initTools(tools []tool.Tool) ([]schemas.ChatTool, map[string]tool.Tool) {
@@ -96,7 +118,7 @@ func initParams(chatTools []schemas.ChatTool) *schemas.ChatParameters {
 	}
 }
 
-func newResponse(content string, usage *schemas.BifrostLLMUsage) Response {
+func buildResponse(content string, usage *schemas.BifrostLLMUsage) Response {
 	r := Response{Content: content}
 	if usage != nil {
 		r.PromptTokens = usage.PromptTokens
@@ -107,7 +129,10 @@ func newResponse(content string, usage *schemas.BifrostLLMUsage) Response {
 }
 
 func (l *llm) streamRequest(ctx context.Context, messages []schemas.ChatMessage, params *schemas.ChatParameters, onDelta StreamFunc) (streamRound, error) {
-	stream, err := l.bifrost.ChatCompletionStreamRequest(schemas.NewBifrostContext(ctx, schemas.NoDeadline), &schemas.BifrostChatRequest{
+	streamCtx := schemas.NewBifrostContext(ctx, schemas.NoDeadline)
+	streamCtx.SetValue(schemas.BifrostContextKeyStreamIdleTimeout, streamIdleTimeout)
+
+	stream, err := l.bifrost.ChatCompletionStreamRequest(streamCtx, &schemas.BifrostChatRequest{
 		Provider: l.provider,
 		Model:    l.model,
 		Input:    messages,

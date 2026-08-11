@@ -3,15 +3,24 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/J4NN0/mycel/internal/agent"
+	"github.com/J4NN0/mycel/internal/llm"
 	"github.com/J4NN0/mycel/internal/logger"
 )
 
-const resumeCallbackPrefix = "resume:"
+const (
+	resumeCallbackPrefix = "resume:"
+
+	// maxPhotoBytes caps a download. Telegram's own getFile limit for bots is 20MB and its compressed
+	// photos land far below that, so this is a backstop against reading an unbounded body into memory.
+	maxPhotoBytes = 20 << 20
+)
 
 type Bot struct {
 	api *tgbotapi.BotAPI
@@ -57,7 +66,10 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 				go b.handleCallback(ctx, update.CallbackQuery, handler)
 				continue
 			}
-			if update.Message == nil || update.Message.Text == "" {
+			if update.Message == nil {
+				continue
+			}
+			if update.Message.Text == "" && len(update.Message.Photo) == 0 {
 				continue
 			}
 			go b.handleMessage(ctx, update.Message, handler)
@@ -67,10 +79,23 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 
 func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler agent.MessageHandler) {
 	sessionID := fmt.Sprintf("%d", msg.Chat.ID)
-	b.log.Debugf("[%s] New message from %s: %s", sessionID, msg.From.UserName, msg.Text)
+
+	input := agent.Input{Text: msg.Text}
+	if len(msg.Photo) > 0 {
+		input.Text = msg.Caption
+		image, err := b.downloadPhoto(ctx, msg.Photo)
+		if err != nil {
+			b.log.Warningf("[%s] Failed to download photo: %v", sessionID, err)
+			b.reply(msg, "I couldn't download that image, sorry.")
+			return
+		}
+		input.Images = []llm.Image{image}
+	}
+
+	b.log.Debugf("[%s] Message from %s: %s (%d image(s))", sessionID, msg.From.UserName, input.Text, len(input.Images))
 
 	// No streaming: Telegram rate-limits message edits, so the reply is sent in one go.
-	result, err := handler(ctx, sessionID, msg.Text, nil)
+	result, err := handler(ctx, sessionID, input, nil)
 	if err != nil {
 		b.log.Warningf("handler failed: %v", err)
 		return
@@ -82,15 +107,52 @@ func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler 
 	}
 
 	b.log.Debugf("[%s] Replying to %s: %s", sessionID, msg.From.UserName, result.Text)
-	replyMsg := tgbotapi.NewMessage(msg.Chat.ID, result.Text)
+	b.reply(msg, result.Text)
+}
+
+func (b *Bot) reply(msg *tgbotapi.Message, text string) {
+	replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
 	if !msg.IsCommand() {
 		replyMsg.ReplyToMessageID = msg.MessageID
 	}
 
-	_, err = b.api.Send(replyMsg)
-	if err != nil {
+	if _, err := b.api.Send(replyMsg); err != nil {
 		b.log.Warningf("failed to send telegram message: %v", err)
 	}
+}
+
+func (b *Bot) downloadPhoto(ctx context.Context, sizes []tgbotapi.PhotoSize) (llm.Image, error) {
+	largest := sizes[len(sizes)-1]
+
+	url, err := b.api.GetFileDirectURL(largest.FileID)
+	if err != nil {
+		return llm.Image{}, fmt.Errorf("resolve file url: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return llm.Image{}, fmt.Errorf("build request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return llm.Image{}, fmt.Errorf("download: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return llm.Image{}, fmt.Errorf("download returned %s", resp.Status)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxPhotoBytes+1))
+	if err != nil {
+		return llm.Image{}, fmt.Errorf("read body: %w", err)
+	}
+	if len(data) > maxPhotoBytes {
+		return llm.Image{}, fmt.Errorf("photo is larger than %dMB", maxPhotoBytes>>20)
+	}
+
+	return llm.Image{Data: data}, nil
 }
 
 func (b *Bot) sendResumePicker(chatID int64, sessionID string, conversations []agent.Conversation) {
@@ -126,7 +188,7 @@ func (b *Bot) handleResumeCallback(ctx context.Context, cq *tgbotapi.CallbackQue
 	}
 
 	sessionID := fmt.Sprintf("%d", cq.Message.Chat.ID)
-	result, err := handler(ctx, sessionID, "/resume "+conversationID, nil)
+	result, err := handler(ctx, sessionID, agent.Input{Text: "/resume " + conversationID}, nil)
 
 	var text string
 	if err != nil {

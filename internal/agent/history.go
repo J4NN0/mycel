@@ -37,9 +37,9 @@ func (a *Agent) loadHistory(ctx context.Context, sessionID, conversationID strin
 	return messages, nil
 }
 
-func (a *Agent) storeHistory(ctx context.Context, sessionID, conversationID, text string, result llm.Response) error {
+func (a *Agent) storeHistory(ctx context.Context, sessionID, conversationID string, input Input, result llm.Response) error {
 	err := a.history.Append(ctx, sessionID, conversationID,
-		llm.Message{Role: schemas.ChatMessageRoleUser, Content: text},
+		llm.Message{Role: schemas.ChatMessageRoleUser, Content: historyText(input)},
 		llm.Message{Role: schemas.ChatMessageRoleAssistant, Content: result.Content},
 	)
 	if err != nil {
@@ -66,6 +66,19 @@ func (a *Agent) storeHistory(ctx context.Context, sessionID, conversationID, tex
 	return nil
 }
 
+func historyText(input Input) string {
+	if len(input.Images) == 0 {
+		return input.Text
+	}
+
+	note := fmt.Sprintf("[sent %d image(s)]", len(input.Images))
+	if input.Text == "" {
+		return note
+	}
+
+	return input.Text + " " + note
+}
+
 func (a *Agent) shouldCompact(count int64, promptTokens int) bool {
 	// A compacted history is system prompt + summary + the retained tail. At or
 	// below that size there is no older content for compaction to shrink.
@@ -87,7 +100,7 @@ func (a *Agent) startNewConversation(ctx context.Context, sessionID string) erro
 		return err
 	}
 
-	a.log.Debugf("[%s] Started new conversation %s", sessionID, conversationID)
+	a.log.Debugf("[%s] Started new conversation with ID: %s", sessionID, conversationID)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -18,10 +19,15 @@ type Platform interface {
 	Run(ctx context.Context, handler MessageHandler) error
 }
 
+type Input struct {
+	Text   string
+	Images []llm.Image
+}
+
 // MessageHandler is the callback a Platform uses to deliver an incoming message and receive the
 // agent's reply. A non-nil onDelta also receives the reply text in fragments, as the model
 // generates it (commands never stream, only normal chat replies do).
-type MessageHandler func(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (*Reply, error)
+type MessageHandler func(ctx context.Context, sessionID string, input Input, onDelta llm.StreamFunc) (*Reply, error)
 
 // Reply is what a Platform gets back for a turn.
 // Text is a normal reply to display as-is.
@@ -84,11 +90,11 @@ func (a *Agent) Run(ctx context.Context) error {
 	return <-errCh
 }
 
-func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.StreamFunc) (*Reply, error) {
+func (a *Agent) reply(ctx context.Context, sessionID string, input Input, onDelta llm.StreamFunc) (*Reply, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	cmdReply, err := a.handleCommand(ctx, sessionID, text)
+	cmdReply, err := a.handleCommand(ctx, sessionID, input.Text)
 	if err != nil {
 		return nil, err
 	}
@@ -105,16 +111,19 @@ func (a *Agent) reply(ctx context.Context, sessionID, text string, onDelta llm.S
 		return nil, err
 	}
 	messages = a.withToolPolicy(messages)
-	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: text})
+	messages = append(messages, llm.Message{Role: schemas.ChatMessageRoleUser, Content: input.Text, Images: input.Images})
 
 	a.log.Debugf("[%s] Generating response ...", sessionID)
 	result, err := a.provider.Chat(ctx, messages, onDelta, a.tools...)
 	if err != nil {
+		if errors.Is(err, llm.ErrVisionUnsupported) {
+			return &Reply{Text: fmt.Sprintf("I can't look at images: %s has no vision support.", a.provider.Model())}, nil
+		}
 		return nil, fmt.Errorf("agent reply: %w", err)
 	}
 
 	a.log.Debugf("[%s] Storing history ...", sessionID)
-	err = a.storeHistory(ctx, sessionID, conversationID, text, result)
+	err = a.storeHistory(ctx, sessionID, conversationID, input, result)
 	if err != nil {
 		a.log.Errorf("[%s] Failed to store history: %v", sessionID, err)
 	}

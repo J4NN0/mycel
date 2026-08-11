@@ -18,20 +18,28 @@ type Provider interface {
 }
 
 type llm struct {
-	log      logger.Logger
-	provider schemas.ModelProvider
-	bifrost  *bifrost.Bifrost
-	model    string
+	log          logger.Logger
+	provider     schemas.ModelProvider
+	bifrost      *bifrost.Bifrost
+	model        string
+	capabilities modelCapabilities
 }
 
 func NewProvider(log logger.Logger, config config.Config) (Provider, error) {
 	pc := &providerConfig{
 		config: config,
 	}
+
+	var capabilities modelCapabilities
 	if pc.config.Provider == schemas.Ollama {
 		err := ensureOllama(config.LlmModel)
 		if err != nil {
 			return nil, fmt.Errorf("failed to ensure ollama provider: %w", err)
+		}
+
+		capabilities, err = fetchCapabilities(log, config.LlmModel)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read capabilities of model %q: %w", config.LlmModel, err)
 		}
 	}
 
@@ -43,15 +51,22 @@ func NewProvider(log logger.Logger, config config.Config) (Provider, error) {
 	}
 
 	return &llm{
-		log:      log,
-		provider: config.Provider,
-		bifrost:  bifrostClient,
-		model:    config.LlmModel,
+		log:          log,
+		provider:     config.Provider,
+		bifrost:      bifrostClient,
+		model:        config.LlmModel,
+		capabilities: capabilities,
 	}, nil
 }
 
 func (l *llm) Model() string {
 	return fmt.Sprintf("%s/%s", l.provider, l.model)
+}
+
+// supportsVision reports whether the model accepts images. When capabilities are unknown - a provider
+// that cannot be asked - lets the provider reject the request itself.
+func (l *llm) supportsVision() bool {
+	return l.capabilities == nil || l.capabilities.has(capabilityVision)
 }
 
 func (l *llm) Shutdown() {
