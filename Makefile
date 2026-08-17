@@ -72,3 +72,29 @@ install:
 
 	@echo "---> Run 'mycel' to start the agent"
 .PHONY: install
+
+# === DOCS =======================================================
+DOCS_VENV=build/docs-venv
+
+# Silence the Material for MkDocs banner about the upcoming MkDocs 2.0
+export NO_MKDOCS_2_WARNING=1
+
+# Install the docs toolchain in its own virtualenv, so a system-wide mkdocs
+# (e.g. Homebrew's, which ships without the material theme) can't get in the way
+$(DOCS_VENV)/bin/mkdocs: docs/requirements.txt
+	@echo "---> Installing docs dependencies"
+	python3 -m venv $(DOCS_VENV)
+	$(DOCS_VENV)/bin/pip install --quiet --upgrade pip
+	$(DOCS_VENV)/bin/pip install --quiet -r docs/requirements.txt
+
+# Serve the documentation locally at http://localhost:8000
+docs: $(DOCS_VENV)/bin/mkdocs
+	@echo "---> Serving docs"
+	$(DOCS_VENV)/bin/mkdocs serve
+.PHONY: docs
+
+# Build the documentation into site/
+docs-build: $(DOCS_VENV)/bin/mkdocs
+	@echo "---> Building docs"
+	$(DOCS_VENV)/bin/mkdocs build --strict
+.PHONY: docs-build

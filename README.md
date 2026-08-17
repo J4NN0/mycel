@@ -4,62 +4,60 @@
   <img src="assets/mycel.png" width="300" alt="mycel">
 </p>
 
-## Setup
+Mycel is a personal AI assistant that runs on your own machine. It talks to a local model through [Ollama](https://ollama.com), remembers your conversations, and answers from wherever you are: a terminal UI, a Telegram chat, etc.
 
-### Telegram
+Hold a real conversation, think a problem through, look at a screenshot, or hand it a goal and let it work through the steps on its own. Nothing leaves your machine unless you explicitly wire up a tool that sends something out.
 
-1. Open Telegram and start a chat with [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` and follow the prompts to choose a name and username for your bot
-3. Copy the token BotFather gives you and set it as `TELEGRAM_BOT_TOKEN`
+## Install
 
-### Resend (email tool)
+1. Install [Go](https://go.dev/dl/), [Ollama](https://ollama.com) and Docker (for Redis). More details in the [prerequisites guide](docs/setup/prerequisites.md).
 
-The agent can send emails through [Resend](https://resend.com).
+2. Get the code
+    ```sh
+    git clone https://github.com/J4NN0/mycel.git
+    cd mycel
+    ```
 
-1. Sign up at [resend.com](https://resend.com)
-2. Create an API key (Dashboard → API Keys) and set it as `RESEND_API_KEY`
-3. Set the sender address as `RESEND_FROM`:
-   - For quick testing, use the shared sandbox sender `onboarding@resend.dev` — no setup required, but it can only send to the email address you signed up to Resend with.
-   - To send to arbitrary recipients, verify a domain you own (Dashboard → Domains, add the SPF/DKIM records) and use an address on that domain, e.g. `agent@yourdomain.com`.
-The tool is only registered when both `RESEND_API_KEY` and `RESEND_FROM` are set.
+3. Copy the sample config and fill in your values:
+   ```sh
+   cp .env.sample .env
+   ```
 
-## Run the Agent
+   Every variable is documented in the [configuration reference](docs/configuration.md).
 
-### Locally, from the repo
+4. Install the binary
+    ```sh
+    make install
+    ```
 
-Copy `.env.sample` to `.env` and fill in your values:
+   This builds and installs `mycel` into `$GOPATH/bin` (make sure it's on your `PATH`) and copies your `.env` to `~/.config/mycel/.env`, so the agent can be started from any directory. An existing config there is left untouched.
+## Run
 
-```sh
-cp .env.sample .env
-```
-
-Then run the agent (also starts Redis via Docker Compose):
-
-```sh
-make run
-```
-
-### Installed, from anywhere
-
-Install the `mycel` binary to `$GOPATH/bin` (make sure that's on your `PATH`):
-
-```sh
-make install
-```
-
-Copy `.env.sample` to `~/.config/mycel/.env` and fill in your values:
-
-```sh
-mkdir -p ~/.config/mycel
-cp .env.sample ~/.config/mycel/.env
-```
-
-Make sure Redis is reachable (e.g. `docker compose up -d redis` from the repo, or `REDIS_ADDR` pointing at your own instance), then run from any directory:
+Once installed, from any directory:
 
 ```sh
 mycel
 ```
 
+Or straight from the repo, which also brings up everything the agent depends on:
+
+```sh
+make run
+```
+
+The first reads `~/.config/mycel/.env`, the second the repo's own `.env`. Either way, Ollama is started and the model pulled automatically on first run.
+
+## Documentation
+
+The full docs live in [`docs/`](docs/). To read them locally:
+
+```sh
+make docs
+```
+
+Then open [localhost:8000](http://localhost:8000). The first run installs the docs toolchain into its own virtualenv under `build/`.
+
 ## Resources
 - [Bifrost](https://docs.getbifrost.ai/quickstart/go-sdk/setting-up)
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+- [MkDocs](https://www.mkdocs.org/)

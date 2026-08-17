@@ -1,0 +1,52 @@
+site_name: Mycel
+site_description: A personal AI assistant that runs on your own machine.
+repo_url: https://github.com/J4NN0/mycel
+repo_name: J4NN0/mycel
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+
+nav:
+  - Home: index.md
+  - Setup:
+      - Prerequisites: setup/prerequisites.md
+      - Configuration: configuration.md
+  - Commands:
+      - Overview: commands/index.md
+      - Reference: commands/reference.md
+  - Tools:
+      - Overview: tools/index.md
+      - Telegram: tools/telegram.md
+      - Resend: tools/resend.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
