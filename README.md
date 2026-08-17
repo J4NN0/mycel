@@ -8,6 +8,13 @@ Mycel is a personal AI assistant that runs on your own machine. It talks to a lo
 
 Hold a real conversation, think a problem through, look at a screenshot, or hand it a goal and let it work through the steps on its own. Nothing leaves your machine unless you explicitly wire up a tool that sends something out.
 
+## Table of Contents
+
+- [Install](#install)
+- [Run](#run)
+- [Documentation](#documentation)
+- [Resources](#resources)
+
 ## Install
 
 1. Install [Go](https://go.dev/dl/), [Ollama](https://ollama.com) and Docker (for Redis). More details in the [prerequisites guide](docs/setup/prerequisites.md).
