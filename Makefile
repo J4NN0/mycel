@@ -2,11 +2,23 @@
 PROJECT_NAME="mycel"
 COVER_PROFILE="build/cover.out"
 
-# Build
+# === BUILD =======================================================
 build:
 	@echo "---> Building $(PROJECT_NAME)"
 	go build -o build/$(PROJECT_NAME) cmd/$(PROJECT_NAME)/main.go
 .PHONY: build
+
+# === SETUP =======================================================
+# One-command bootstrap: check what is missing (Go, Ollama, Docker, docs and lint
+# toolchains), install it, then build the agent and pull the model.
+setup:
+	@./install/install.sh
+.PHONY: setup
+
+# Report which dependencies are missing, without installing anything
+doctor:
+	@./install/doctor.sh
+.PHONY: doctor
 
 # === TOOLS =======================================================
 # Fix go.mod and go.sum
@@ -53,6 +65,8 @@ run:
 	set -a && . ./.env && set +a && go run cmd/$(PROJECT_NAME)/main.go
 .PHONY: run
 
+# Build and install the binary, assuming the dependencies are already there.
+# Starting from scratch? Use 'make setup' instead.
 install:
 	@echo "---> Installing $(PROJECT_NAME)"
 	go install ./cmd/$(PROJECT_NAME)

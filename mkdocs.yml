@@ -26,11 +26,12 @@ theme:
 nav:
   - Home: index.md
   - Setup:
-      - Prerequisites: setup/prerequisites.md
+      - Automatic installation: setup/automatic.md
+      - Manual installation: setup/manual.md
       - Configuration: configuration.md
   - Commands:
       - Overview: commands/index.md
-      - Reference: commands/reference.md
+      - Commands: commands/commands.md
   - Tools:
       - Overview: tools/index.md
       - Telegram: tools/telegram.md

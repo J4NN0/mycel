@@ -1,4 +1,4 @@
-# Reference
+# Commands
 
 Every command Mycel understands, and what it does.
 

@@ -10,34 +10,28 @@ Hold a real conversation, think a problem through, look at a screenshot, or hand
 
 ## Table of Contents
 
-- [Install](#install)
+- [Installation](#installation)
 - [Run](#run)
 - [Documentation](#documentation)
 - [Resources](#resources)
 
-## Install
+## Installation
 
-1. Install [Go](https://go.dev/dl/), [Ollama](https://ollama.com) and Docker (for Redis). More details in the [prerequisites guide](docs/setup/prerequisites.md).
+Clone the repo and run the installer:
 
-2. Get the code
-    ```sh
-    git clone https://github.com/J4NN0/mycel.git
-    cd mycel
-    ```
+```sh
+git clone https://github.com/J4NN0/mycel.git
+cd mycel
+make setup
+```
 
-3. Copy the sample config and fill in your values:
-   ```sh
-   cp .env.sample .env
-   ```
+It checks what your machine is missing and installs it. See [its README](install/README.md) or the
+[automatic install guide](docs/setup/automatic.md). Prefer to install the pieces yourself? [Manual install](docs/setup/manual.md) walks through them one by one.
 
-   Every variable is documented in the [configuration reference](docs/configuration.md).
+Not sure what is missing? `make doctor` reports it without installing anything.
 
-4. Install the binary
-    ```sh
-    make install
-    ```
+Once installed, fill in the variable that are relevant for you (e.g., Telegram, Resend, etc.) in `~/.config/mycel/.env`. Every variable is documented in the [configuration reference](docs/configuration.md).
 
-   This builds and installs `mycel` into `$GOPATH/bin` (make sure it's on your `PATH`) and copies your `.env` to `~/.config/mycel/.env`, so the agent can be started from any directory. An existing config there is left untouched.
 ## Run
 
 Once installed, from any directory:

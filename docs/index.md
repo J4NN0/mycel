@@ -6,8 +6,10 @@ These pages cover everything you need to set it up.
 
 ## Where to start
 
-- **[Prerequisites](setup/prerequisites.md)** — Go, Ollama and Redis: the pieces Mycel needs to run
-  at all.
+- **[Automatic install](setup/automatic.md)** — one command that installs whatever your machine
+  is missing, then builds the agent.
+- **[Manual install](setup/manual.md)** — Go, Ollama and Redis: the pieces Mycel needs to run at
+  all, installed one by one.
 - **[Configuration](configuration.md)** — every environment variable, what it does and where the
   `.env` file lives.
 - **[Commands](commands/index.md)** — the `/` instructions you can send the agent itself.

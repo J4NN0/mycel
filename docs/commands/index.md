@@ -29,4 +29,4 @@ through to the model. This means you get a response even if there’s a typo. Us
 No matter where you’re chatting with Mycel, the commands will be the same, and the client will usually
 help you to write them: just start typing `/`.
 
-**[See every command →](reference.md)**
+**[See every command →](commands.md)**

@@ -20,7 +20,7 @@ Restart Mycel, open the chat with your bot and send `/start`.
 
 ## What you get
 
-Mycel registers its [commands](../commands/reference.md) with Telegram on startup, so typing `/` in the chat brings up the same list as the terminal, with `/resume` rendering past conversations as inline buttons you can tap.
+Mycel registers its [commands](../commands/commands.md) with Telegram on startup, so typing `/` in the chat brings up the same list as the terminal, with `/resume` rendering past conversations as inline buttons you can tap.
 
 You can also send photos: Telegram downloads them, and Mycel passes them to the model as long as the model has vision support.
 
