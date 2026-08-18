@@ -13,16 +13,28 @@ import (
 const envFileName = ".env"
 
 type Config struct {
+	General  General
+	Platform Platform
+	Tool     Tool
+}
+
+type General struct {
 	Provider           schemas.ModelProvider `envconfig:"PROVIDER" required:"true"`
 	LlmModel           string                `envconfig:"LLM_MODEL" required:"true"`
+	Persona            string                `envconfig:"PERSONA" default:"neutral"`
 	MaxHistoryMessages int                   `envconfig:"MAX_HISTORY_MESSAGES" default:"20"`
 	MaxHistoryTokens   int                   `envconfig:"MAX_HISTORY_TOKENS" default:"6000"`
-	Persona            string                `envconfig:"PERSONA" default:"neutral"`
-	TelegramBotToken   string                `envconfig:"TELEGRAM_BOT_TOKEN"`
 	RedisAddr          string                `envconfig:"REDIS_ADDR" default:"localhost:6379"`
 	LogLevel           string                `envconfig:"LOG_LEVEL" default:"info"`
-	ResendAPIKey       string                `envconfig:"RESEND_API_KEY"`
-	ResendFrom         string                `envconfig:"RESEND_FROM"`
+}
+
+type Platform struct {
+	TelegramBotToken string `envconfig:"TELEGRAM_BOT_TOKEN"`
+}
+
+type Tool struct {
+	ResendAPIKey string `envconfig:"RESEND_API_KEY"`
+	ResendFrom   string `envconfig:"RESEND_FROM"`
 }
 
 func ReadConfig() (Config, error) {
@@ -31,9 +43,10 @@ func ReadConfig() (Config, error) {
 	}
 
 	cfg := Config{}
-	err := envconfig.Process("", &cfg)
-	if err != nil {
-		return Config{}, err
+	for _, section := range []any{&cfg.General, &cfg.Platform, &cfg.Tool} {
+		if err := envconfig.Process("", section); err != nil {
+			return Config{}, err
+		}
 	}
 	return cfg, nil
 }

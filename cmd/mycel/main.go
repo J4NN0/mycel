@@ -30,34 +30,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	log := logger.New(appName, appConfig.LogLevel)
+	log := logger.New(appName, appConfig.General.LogLevel)
 
-	llmProvider, err := llm.NewProvider(log, appConfig)
+	llmProvider, err := llm.NewProvider(log, appConfig.General)
 	if err != nil {
 		log.Fatalf("llm provider initialization failed: %v", err)
 		return
 	}
 	defer llmProvider.Shutdown()
 
-	redisClient, err := redis.NewClient(ctx, appConfig.RedisAddr)
+	redisClient, err := redis.NewClient(ctx, appConfig.General.RedisAddr)
 	if err != nil {
 		log.Fatalf("redis initialization failed: %v", err)
 		return
 	}
 	defer redisClient.Close()
 
-	promptManager := prompt.NewManager(appConfig.Persona)
-	platforms := loadPlatforms(log, appConfig)
-	agentTools := loadTools(log, appConfig)
+	promptManager := prompt.NewManager(appConfig.General.Persona)
+	platforms := loadPlatforms(log, appConfig.Platform)
+	agentTools := loadTools(log, appConfig.Tool)
 
-	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.MaxHistoryMessages, appConfig.MaxHistoryTokens, agentTools, platforms...)
+	ag := agent.New(log, llmProvider, redisClient, promptManager, appConfig.General.MaxHistoryMessages, appConfig.General.MaxHistoryTokens, agentTools, platforms...)
 	err = ag.Run(ctx)
 	if err != nil {
 		log.Fatalf("agent error: %v", err)
 	}
 }
 
-func loadTools(log logger.Logger, cfg config.Config) []tool.Tool {
+func loadTools(log logger.Logger, cfg config.Tool) []tool.Tool {
 	var tools []tool.Tool
 
 	if email := tool.NewEmail(log, cfg.ResendAPIKey, cfg.ResendFrom); email != nil {
@@ -67,7 +67,7 @@ func loadTools(log logger.Logger, cfg config.Config) []tool.Tool {
 	return tools
 }
 
-func loadPlatforms(log logger.Logger, cfg config.Config) []agent.Platform {
+func loadPlatforms(log logger.Logger, cfg config.Platform) []agent.Platform {
 	platforms := []agent.Platform{cli.New(log, appName)}
 
 	if cfg.TelegramBotToken != "" {

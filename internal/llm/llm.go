@@ -25,7 +25,7 @@ type llm struct {
 	capabilities modelCapabilities
 }
 
-func NewProvider(log logger.Logger, config config.Config) (Provider, error) {
+func NewProvider(log logger.Logger, config config.General) (Provider, error) {
 	pc := &providerConfig{
 		config: config,
 	}

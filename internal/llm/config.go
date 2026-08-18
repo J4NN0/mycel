@@ -19,7 +19,7 @@ const (
 
 // providerConfig needs to implement GetConfiguredProviders, GetKeysForProvider, and GetConfigForProvider
 type providerConfig struct {
-	config config.Config
+	config config.General
 }
 
 func (p *providerConfig) GetConfiguredProviders() ([]schemas.ModelProvider, error) {
