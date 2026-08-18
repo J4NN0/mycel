@@ -1,7 +1,6 @@
 # Configuration
 
-Mycel is configured entirely through environment variables, usually kept in a `.env` file. Start
-from the sample:
+Mycel is configured entirely through environment variables, usually kept in a `.env` file. Start from the sample:
 
 ```sh
 cp .env.sample .env
@@ -9,16 +8,11 @@ cp .env.sample .env
 
 ## Where the `.env` file lives
 
-| How you run it | File used |
-| --- | --- |
-| `make run` (from the repo) | `.env` in the repo root, exported into the process |
-| `mycel` (installed binary) | `~/.config/mycel/.env` |
+`mycel` reads a single file: `~/.config/mycel/.env`, so it behaves the same from any directory.
 
-`make install` creates `~/.config/mycel/` and seeds it with your repo `.env` — or with `.env.sample`
-if you don't have one yet — and never overwrites a config that is already there.
+`make install` creates `~/.config/mycel/` and seeds it with your repo `.env` — or with `.env.sample` if you don't have one yet — and never overwrites a config that is already there. The repo's own `.env` is only that seed; edit `~/.config/mycel/.env` to change how the installed agent runs.
 
-Variables already set in your shell always win: the config file is loaded without overriding the
-existing environment, so `LLM_MODEL=llama3.2 mycel` works as a one-off override.
+Variables already set in your shell always win: the config file is loaded without overriding the  existing environment, so `LLM_MODEL=llama3.2 mycel` works as a one-off override.
 
 ## Variables
 
@@ -45,11 +39,6 @@ existing environment, so `LLM_MODEL=llama3.2 mycel` works as a one-off override.
 
 ## History and compaction
 
-Conversations are stored in Redis and shared by every [platform](platforms/index.md): one active
-conversation at a time, with as many past ones as you have started alongside it.
+Conversations are stored in Redis and shared by every [platform](platforms/index.md): one active conversation at a time, with as many past ones as you have started alongside it.
 
-When a conversation outgrows its limits, Mycel summarizes the older messages instead of dropping
-them: the system prompt and the last few exchanges are kept verbatim, everything before them is
-folded into a running summary. `MAX_HISTORY_TOKENS` is the limit that normally applies, measured
-against the prompt tokens the provider reports; `MAX_HISTORY_MESSAGES` is the fallback when no token
-count is available.
+When a conversation outgrows its limits, Mycel summarizes the older messages instead of dropping them: the system prompt and the last few exchanges are kept verbatim, everything before them is folded into a running summary. `MAX_HISTORY_TOKENS` is the limit that normally applies, measured against the prompt tokens the provider reports; `MAX_HISTORY_MESSAGES` is the fallback when no token count is available.

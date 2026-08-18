@@ -19,7 +19,7 @@ run_steps
 summary_print
 
 if summary_has_failures; then
-	printf '\n  %sRun install/install.sh to fix the gaps above.%s\n' "$C_YELLOW" "$C_RESET"
+	printf '\n  %sRun make install to fix the gaps above.%s\n' "$C_YELLOW" "$C_RESET"
 	exit 1
 fi
 

@@ -22,7 +22,7 @@ Clone the repo and run the installer:
 ```sh
 git clone https://github.com/J4NN0/mycel.git
 cd mycel
-make setup
+make install
 ```
 
 It checks what your machine is missing and installs it. See [its README](install/README.md) or the
@@ -34,19 +34,15 @@ Once installed, fill in the variable that are relevant for you (e.g., Telegram, 
 
 ## Run
 
-Once installed, from any directory:
+From any directory:
 
 ```sh
 mycel
 ```
 
-Or straight from the repo, which also brings up everything the agent depends on:
+It reads `~/.config/mycel/.env`, starts Ollama and pulls the model if it isn't there yet.
 
-```sh
-make run
-```
-
-The first reads `~/.config/mycel/.env`, the second the repo's own `.env`. Either way, Ollama is started and the model pulled automatically on first run.
+Changed the code? `make install` rebuilds and reinstalls the binary — it re-checks the dependencies first, which takes under a second when they are all in place.
 
 ## Documentation
 

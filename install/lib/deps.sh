@@ -227,7 +227,7 @@ ensure_docker_compose() {
 	if docker compose version >/dev/null 2>&1; then
 		return 0
 	fi
-	log_warn "'docker compose' (v2) is unavailable — 'make run' needs it"
+	log_warn "'docker compose' (v2) is unavailable — the bundled Redis needs it"
 	if [ "$OS" = "linux" ] && [ "$CHECK_ONLY" != "1" ]; then
 		pkg_install docker-compose-plugin || true
 	fi

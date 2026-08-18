@@ -3,7 +3,7 @@
 # Mycel installer: works out what is missing, installs it, and leaves you with a
 # working agent. Safe to re-run — anything already in place is left alone.
 #
-#   ./install/install.sh               # install everything
+#   ./install/install.sh               # install everything (same as `make install`)
 #   ./install/install.sh --core-only   # skip the docs and lint toolchains
 #
 # To see what is missing without installing anything, run ./install/doctor.sh

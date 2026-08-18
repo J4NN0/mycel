@@ -212,6 +212,6 @@ print_next_steps() {
 	printf '  Review your configuration (tokens for Telegram, Resend, ...):\n    %s%s%s\n\n' \
 		"$C_BOLD" "$CONFIG_ENV" "$C_RESET"
 	printf '  Then start the agent from anywhere:\n    %smycel%s\n\n' "$C_BOLD" "$C_RESET"
-	printf '  %sOr from this repo, with its own .env and dependencies: make run%s\n' \
+	printf '  %sChanged the code? Re-run make install to rebuild the binary.%s\n' \
 		"$C_DIM" "$C_RESET"
 }

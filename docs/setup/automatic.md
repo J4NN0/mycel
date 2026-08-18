@@ -22,7 +22,7 @@ Summary
 From a fresh clone, the following one command will install anything that's missing:
 
 ```sh
-make setup
+make install
 ```
 
 The [installer](https://github.com/J4NN0/mycel/tree/main/install) inspects your machine, installs only the pieces that are absent, builds `mycel`, writes `~/.config/mycel/.env` and pulls the model. It is safe to re-run, and it never overwrites an existing config.
@@ -59,3 +59,5 @@ its own — there is nothing to pass.
 After the installation is done, `mycel` is sitting in `$GOPATH/bin` (which is only added to your shell profile if it wasn't there previously), so you can launch the agent from any place on your filesystem.
 
 The final step is up to you: provide values for your environment variables in `~/.config/mycel/.env` (all variables are described in [Configuration](../configuration.md)), then execute `mycel`.
+
+Working on Mycel itself? Run `make install` again after a code change: it rebuilds and reinstalls the binary, and re-checking the dependencies costs well under a second when they are all already there.

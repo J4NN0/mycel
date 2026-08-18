@@ -3,15 +3,12 @@
 Everything needed to get Mycel running on a machine that has nothing installed yet.
 
 ```sh
-./install/install.sh      # or: make setup
+make install
 ```
 
-The script figures out what is already there, installs only what is missing, builds the
-agent and pulls the model. Re-running it is harmless: anything in place is left alone,
-and an existing `~/.config/mycel/.env` is never overwritten.
+The script figures out what is already there, installs only what is missing, builds the agent and pulls the model. Re-running it is harmless: anything in place is left alone, and an existing `~/.config/mycel/.env` is never overwritten.
 
-Because installing Go, Docker or Ollama means running package managers and upstream
-install scripts, the run starts with a dry pass and shows what it is about to touch:
+Because installing Go, Docker or Ollama means running package managers and upstream install scripts, the run starts with a dry pass and shows what it is about to touch:
 
 ```text
 ---> Looking at what this machine already has
@@ -19,8 +16,7 @@ install scripts, the run starts with a dry pass and shows what it is about to to
   ?    Go ahead? [Y/n]
 ```
 
-That is the only question, and there is nothing to confirm when nothing is missing. A
-missing terminal is not consent: without one the script stops rather than assuming yes.
+That is the only question, and there is nothing to confirm when nothing is missing. A missing terminal is not consent: without one the script stops rather than assuming yes.
 
 ## What it takes care of
 
@@ -33,17 +29,11 @@ missing terminal is not consent: without one the script stops rather than assumi
 | Python 3 + venv | `make docs` (MkDocs in its own venv)    | package manager (plus `python3-venv` on Debian)      |
 | golangci-lint   | `make lint`                             | Homebrew on macOS, `go install` elsewhere            |
 
-It then writes `~/.config/mycel/.env` (from your `.env`, or from `.env.sample`), puts
-`mycel` in `$GOPATH/bin`, adds that directory to your `PATH` if it is missing, starts
-Redis and pulls the model named by `LLM_MODEL`.
+It then writes `~/.config/mycel/.env` (from your `.env`, or from `.env.sample`), puts `mycel` in `$GOPATH/bin`, adds that directory to your `PATH` if it is missing, starts Redis and pulls the model named by `LLM_MODEL`.
 
-The required Go version is read from `go.mod`, so the installer and the build can never
-disagree. A Go older than that is still accepted from 1.21 onwards, because Go downloads
-the toolchain `go.mod` asks for on its own.
+The required Go version is read from `go.mod`, so the installer and the build can never disagree. A Go older than that is still accepted from 1.21 onwards, because Go downloads the toolchain `go.mod` asks for on its own.
 
-Redis is only installed when it has to be: if something already answers on `REDIS_ADDR`,
-Docker is never touched. Point `REDIS_ADDR` at a Redis you manage and the whole Docker
-step disappears.
+Redis is only installed when it has to be: if something already answers on `REDIS_ADDR`, Docker is never touched. Point `REDIS_ADDR` at a Redis you manage and the whole Docker step disappears.
 
 ## Options
 
@@ -58,7 +48,7 @@ step disappears.
 see why a machine cannot run the agent:
 
 ```sh
-./install/doctor.sh      # or: make doctor
+make doctor              # or: ./install/doctor.sh
 ```
 
 ```

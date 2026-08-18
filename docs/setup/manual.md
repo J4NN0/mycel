@@ -1,18 +1,15 @@
 # Manual installation
 
-Mycel needs three things before it can start: a Go toolchain to build the project, Ollama to run the model(s), and Docker (i.e., Redis to store conversations, etc.). The installer puts all of them there for you.
+Mycel needs three things before it can start: a Go toolchain to build the project, Ollama to run the model(s), and Docker (i.e., Redis to store conversations, etc.). This page walks through them one by one, then builds and configures the agent.
 
 ## 1. Go
 
-Mycel is built with Go — see [`go.mod`](https://github.com/J4NN0/mycel/blob/main/go.mod) for the
-version the module targets.
+Mycel is built with Go — see [`go.mod`](https://github.com/J4NN0/mycel/blob/main/go.mod) for the version the module targets.
 
 ```sh
-brew install go   # macOS
+brew install go   # macOS, or download from go.dev/doc/install
 go version
 ```
-
-Go 1.21 and newer downloads the exact toolchain `go.mod` asks for on its own, so a slightly older Go still builds Mycel.
 
 The binary lands in `$GOPATH/bin` (usually `~/go/bin`), so make sure that directory is on your `PATH`:
 
@@ -44,11 +41,15 @@ Conversation history lives in Redis. The repo ships a `docker-compose.yml` with 
 docker compose up -d redis
 ```
 
-`make run` does this for you, and also starts [Redis Commander](http://localhost:8081), a web UI for inspecting what Mycel has stored.
+To also get [Redis Commander](http://localhost:8081), a web UI for inspecting what Mycel has stored:
+
+```sh
+docker compose --profile tools up -d redis-commander
+```
 
 Already have a Redis instance? Point `REDIS_ADDR` at it instead and skip Docker entirely.
 
-## 4. Configure and build
+## 4. Configure
 
 Copy the sample config, then fill in your values — every variable is documented in the [configuration reference](../configuration.md):
 
@@ -56,20 +57,40 @@ Copy the sample config, then fill in your values — every variable is documente
 cp .env.sample .env
 ```
 
-Then build and install the binary:
+## 5. Build the binary
+
+`go install` compiles the agent and writes the `mycel` binary to `$GOPATH/bin`, the directory you put on your `PATH` in [step 1](#1-go):
 
 ```sh
-make install
+go install ./cmd/mycel
 ```
 
-This installs `mycel` into `$GOPATH/bin` and copies your `.env` to `~/.config/mycel/.env`, so the agent can be started from any directory. An existing config there is left untouched.
+Confirm your shell can find it:
+
+```sh
+which mycel   # → /Users/you/go/bin/mycel
+```
+
+## 6. Set config
+
+Mycel reads a single fixed path `~/.config/mycel/.env`. Copy your filled-in `.env` (or `.env.sample`) there:
+
+```sh
+mkdir -p ~/.config/mycel
+cp .env ~/.config/mycel/.env
+```
+
+From now on, `~/.config/mycel/.env` is the file to edit when you want to change how the installed agent runs. Variables already exported in your shell take precedence over it, so `LLM_MODEL=llama3.2 mycel` works as a one-off override.
+
+You are done — run `mycel` from anywhere:
+
+```sh
+mycel
+```
 
 ## Optional toolchains
 
 Only needed if you plan to work on Mycel itself:
 
-- **Docs** — `make docs` builds [MkDocs](https://www.mkdocs.org/) into its own virtualenv, so it
-  needs Python 3.9+ with the `venv` and `pip` modules (on Debian and Ubuntu those live in the
-  separate `python3-venv` and `python3-pip` packages).
-- **Lint** — `make lint` needs [golangci-lint](https://golangci-lint.run):
-  `brew install golangci-lint`.
+- **Docs** — `make docs` builds [MkDocs](https://www.mkdocs.org/) into its own virtualenv, so it needs Python 3.9+ with the `venv` and `pip` modules (on Debian and Ubuntu those live in the separate `python3-venv` and `python3-pip` packages).
+- **Lint** — `make lint` needs [golangci-lint](https://golangci-lint.run): `brew install golangci-lint`.
