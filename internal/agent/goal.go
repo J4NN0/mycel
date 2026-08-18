@@ -31,11 +31,11 @@ func (a *Agent) runGoal(ctx context.Context, goal string) {
 		return
 	}
 
-	messages := a.withToolPolicy([]llm.Message{
+	messages := []llm.Message{
 		{Role: schemas.ChatMessageRoleSystem, Content: systemPrompt},
 		{Role: schemas.ChatMessageRoleSystem, Content: goalPrompt},
 		{Role: schemas.ChatMessageRoleUser, Content: goal},
-	})
+	}
 
 	for step := range goalMaxSteps {
 		select {
@@ -47,7 +47,7 @@ func (a *Agent) runGoal(ctx context.Context, goal string) {
 
 		a.log.Debugf("Goal step %d/%d ...", step+1, goalMaxSteps)
 
-		result, err := a.provider.Chat(ctx, messages, nil, a.tools...)
+		result, err := a.provider.Chat(ctx, a.withContext(messages), nil, a.tools...)
 		if err != nil {
 			a.log.Errorf("goal step %d: %v", step+1, err)
 			return

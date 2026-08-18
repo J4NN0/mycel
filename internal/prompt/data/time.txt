@@ -1,0 +1,7 @@
+## Current date and time
+
+It is {{.Human}} ({{.ISO}}) right now.
+
+That is the clock reading for the message you are answering now — not for anything earlier in the conversation, which may have happened hours or days ago.
+
+Work anything time-dependent out from it: what "today", "tomorrow" or "last week" refer to, how long ago something happened, whether a date has already passed, how many days remain until one. Never guess the date, and never tell the user you have no way of knowing what day or time it is.

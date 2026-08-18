@@ -58,6 +58,10 @@ func NewEmail(log logger.Logger, apiKey, from string) Tool {
 	return e
 }
 
+func (t *Email) Info() (string, string) {
+	return emailName, emailDesc
+}
+
 func (t *Email) Definition() schemas.ChatTool {
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "to", Value: map[string]string{"type": "string", "description": toDesc}},

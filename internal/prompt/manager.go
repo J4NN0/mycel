@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"path"
 	"strings"
+	"text/template"
+	"time"
 )
 
 //go:embed data
@@ -19,10 +21,16 @@ const (
 	goalName      = "goal"
 	compactName   = "compact"
 	toolsName     = "tools"
+	timeName      = "time"
 )
 
 const (
 	personasDir = "personas"
+)
+
+const (
+	humanTimeLayout = "Monday, 2 January 2006 at 15:04 MST"
+	isoTimeLayout   = time.RFC3339
 )
 
 type Manager struct {
@@ -60,8 +68,40 @@ func (m *Manager) LoadCompact() (string, error) {
 	return m.loadFile(compactName)
 }
 
-func (m *Manager) LoadTools() (string, error) {
-	return m.loadFile(toolsName)
+func (m *Manager) LoadTime(now time.Time) (string, error) {
+	return m.render(timeName, struct{ Human, ISO string }{
+		Human: now.Format(humanTimeLayout),
+		ISO:   now.Format(isoTimeLayout),
+	})
+}
+
+type ToolInfo struct {
+	Name        string
+	Description string
+}
+
+func (m *Manager) LoadToolPolicy(tools []ToolInfo) (string, error) {
+	return m.render(toolsName, struct{ Tools []ToolInfo }{Tools: tools})
+}
+
+func (m *Manager) render(name string, data any) (string, error) {
+	raw, err := m.loadFile(name)
+	if err != nil {
+		return "", err
+	}
+
+	tmpl, err := template.New(name).Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse prompt %q: %w", name, err)
+	}
+
+	var rendered strings.Builder
+	err = tmpl.Execute(&rendered, data)
+	if err != nil {
+		return "", fmt.Errorf("failed to render prompt %q: %w", name, err)
+	}
+
+	return strings.TrimSpace(rendered.String()), nil
 }
 
 func (m *Manager) loadFile(name string) (string, error) {

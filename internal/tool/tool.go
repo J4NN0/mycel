@@ -8,6 +8,7 @@ import (
 )
 
 type Tool interface {
+	Info() (name, description string)
 	Definition() schemas.ChatTool
 	Execute(ctx context.Context, args json.RawMessage) (string, error)
 }
