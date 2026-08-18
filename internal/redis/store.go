@@ -19,18 +19,18 @@ type ConversationSummary struct {
 }
 
 type Store interface {
-	Load(ctx context.Context, sessionID, conversationID string) ([]llm.Message, error)
-	Len(ctx context.Context, sessionID, conversationID string) (int64, error)
-	Append(ctx context.Context, sessionID, conversationID string, messages ...llm.Message) error
-	Replace(ctx context.Context, sessionID, conversationID string, messages []llm.Message) error
-	ActiveConversation(ctx context.Context, sessionID string) (string, error)
-	NewConversation(ctx context.Context, sessionID string) (string, error)
-	SetActiveConversation(ctx context.Context, sessionID, conversationID string) error
-	ListConversations(ctx context.Context, sessionID, excludeID string, limit int) ([]ConversationSummary, error)
+	Load(ctx context.Context, conversationID string) ([]llm.Message, error)
+	Len(ctx context.Context, conversationID string) (int64, error)
+	Append(ctx context.Context, conversationID string, messages ...llm.Message) error
+	Replace(ctx context.Context, conversationID string, messages []llm.Message) error
+	ActiveConversation(ctx context.Context) (string, error)
+	NewConversation(ctx context.Context) (string, error)
+	SetActiveConversation(ctx context.Context, conversationID string) error
+	ListConversations(ctx context.Context, excludeID string, limit int) ([]ConversationSummary, error)
 }
 
-func (c *Client) Load(ctx context.Context, sessionID, conversationID string) ([]llm.Message, error) {
-	raw, err := c.rdb.LRange(ctx, historyKey(sessionID, conversationID), 0, -1).Result()
+func (c *Client) Load(ctx context.Context, conversationID string) ([]llm.Message, error) {
+	raw, err := c.rdb.LRange(ctx, historyKey(conversationID), 0, -1).Result()
 	if err != nil {
 		return nil, fmt.Errorf("redis lrange: %w", err)
 	}
@@ -48,15 +48,15 @@ func (c *Client) Load(ctx context.Context, sessionID, conversationID string) ([]
 	return messages, nil
 }
 
-func (c *Client) Len(ctx context.Context, sessionID, conversationID string) (int64, error) {
-	n, err := c.rdb.LLen(ctx, historyKey(sessionID, conversationID)).Result()
+func (c *Client) Len(ctx context.Context, conversationID string) (int64, error) {
+	n, err := c.rdb.LLen(ctx, historyKey(conversationID)).Result()
 	if err != nil {
 		return 0, fmt.Errorf("redis llen: %w", err)
 	}
 	return n, nil
 }
 
-func (c *Client) Append(ctx context.Context, sessionID, conversationID string, messages ...llm.Message) error {
+func (c *Client) Append(ctx context.Context, conversationID string, messages ...llm.Message) error {
 	if len(messages) == 0 {
 		return nil
 	}
@@ -66,7 +66,7 @@ func (c *Client) Append(ctx context.Context, sessionID, conversationID string, m
 		return err
 	}
 
-	err = c.rdb.RPush(ctx, historyKey(sessionID, conversationID), entries...).Err()
+	err = c.rdb.RPush(ctx, historyKey(conversationID), entries...).Err()
 	if err != nil {
 		return fmt.Errorf("redis rpush: %w", err)
 	}
@@ -74,13 +74,13 @@ func (c *Client) Append(ctx context.Context, sessionID, conversationID string, m
 	return nil
 }
 
-func (c *Client) Replace(ctx context.Context, sessionID, conversationID string, messages []llm.Message) error {
+func (c *Client) Replace(ctx context.Context, conversationID string, messages []llm.Message) error {
 	entries, err := encodeMessages(messages)
 	if err != nil {
 		return err
 	}
 
-	key := historyKey(sessionID, conversationID)
+	key := historyKey(conversationID)
 	pipe := c.rdb.TxPipeline()
 	pipe.Del(ctx, key)
 	if len(entries) > 0 {
@@ -107,8 +107,8 @@ func encodeMessages(messages []llm.Message) ([]any, error) {
 	return entries, nil
 }
 
-func (c *Client) ActiveConversation(ctx context.Context, sessionID string) (string, error) {
-	id, err := c.rdb.Get(ctx, activeConvKey(sessionID)).Result()
+func (c *Client) ActiveConversation(ctx context.Context) (string, error) {
+	id, err := c.rdb.Get(ctx, activeConvKey).Result()
 	if err == nil {
 		return id, nil
 	}
@@ -116,17 +116,17 @@ func (c *Client) ActiveConversation(ctx context.Context, sessionID string) (stri
 		return "", fmt.Errorf("redis get active conversation: %w", err)
 	}
 
-	return c.NewConversation(ctx, sessionID)
+	return c.NewConversation(ctx)
 }
 
-func (c *Client) NewConversation(ctx context.Context, sessionID string) (string, error) {
-	seq, err := c.rdb.Incr(ctx, convSeqKey(sessionID)).Result()
+func (c *Client) NewConversation(ctx context.Context) (string, error) {
+	seq, err := c.rdb.Incr(ctx, convSeqKey).Result()
 	if err != nil {
 		return "", fmt.Errorf("redis incr conversation seq: %w", err)
 	}
 
 	id := strconv.FormatInt(seq, 10)
-	err = c.rdb.Set(ctx, activeConvKey(sessionID), id, 0).Err()
+	err = c.rdb.Set(ctx, activeConvKey, id, 0).Err()
 	if err != nil {
 		return "", fmt.Errorf("redis set active conversation: %w", err)
 	}
@@ -134,8 +134,8 @@ func (c *Client) NewConversation(ctx context.Context, sessionID string) (string,
 	return id, nil
 }
 
-func (c *Client) SetActiveConversation(ctx context.Context, sessionID, conversationID string) error {
-	n, err := c.Len(ctx, sessionID, conversationID)
+func (c *Client) SetActiveConversation(ctx context.Context, conversationID string) error {
+	n, err := c.Len(ctx, conversationID)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (c *Client) SetActiveConversation(ctx context.Context, sessionID, conversat
 		return fmt.Errorf("conversation %s has no messages", conversationID)
 	}
 
-	err = c.rdb.Set(ctx, activeConvKey(sessionID), conversationID, 0).Err()
+	err = c.rdb.Set(ctx, activeConvKey, conversationID, 0).Err()
 	if err != nil {
 		return fmt.Errorf("redis set active conversation: %w", err)
 	}
@@ -151,8 +151,8 @@ func (c *Client) SetActiveConversation(ctx context.Context, sessionID, conversat
 	return nil
 }
 
-func (c *Client) ListConversations(ctx context.Context, sessionID, excludeID string, limit int) ([]ConversationSummary, error) {
-	seqStr, err := c.rdb.Get(ctx, convSeqKey(sessionID)).Result()
+func (c *Client) ListConversations(ctx context.Context, excludeID string, limit int) ([]ConversationSummary, error) {
+	seqStr, err := c.rdb.Get(ctx, convSeqKey).Result()
 	if errors.Is(err, goredis.Nil) {
 		return nil, nil
 	}
@@ -172,7 +172,7 @@ func (c *Client) ListConversations(ctx context.Context, sessionID, excludeID str
 			continue
 		}
 
-		n, err := c.Len(ctx, sessionID, conversationID)
+		n, err := c.Len(ctx, conversationID)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +180,7 @@ func (c *Client) ListConversations(ctx context.Context, sessionID, excludeID str
 			continue
 		}
 
-		messages, err := c.Load(ctx, sessionID, conversationID)
+		messages, err := c.Load(ctx, conversationID)
 		if err != nil {
 			return nil, err
 		}

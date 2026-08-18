@@ -45,7 +45,8 @@ existing environment, so `LLM_MODEL=llama3.2 mycel` works as a one-off override.
 
 ## History and compaction
 
-Conversations are stored in Redis per session, and each session can hold several conversations.
+Conversations are stored in Redis and shared by every [platform](platforms/index.md): one active
+conversation at a time, with as many past ones as you have started alongside it.
 
 When a conversation outgrows its limits, Mycel summarizes the older messages instead of dropping
 them: the system prompt and the last few exchanges are kept verbatim, everything before them is

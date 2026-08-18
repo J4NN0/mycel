@@ -27,6 +27,9 @@ Starts a new conversation. The model loses the thread — the next message begin
 
 Nothing is deleted. The previous conversation is kept, and you can come back to it with `/resume`.
 
+Conversations are shared across [platforms](../platforms/index.md), so clearing from Telegram also
+moves the terminal on to the new conversation.
+
 ## `/resume`
 
 Brings back a past conversation. With no argument it lists your recent ones, each with a short preview of how it started, excluding the one you're already in:
@@ -36,6 +39,9 @@ Brings back a past conversation. With no argument it lists your recent ones, eac
 ```
 
 The choices are presented however the client you're on presents them. Whichever you choose becomes the active conversation, and your next message continues it  with the full history restored.
+
+The list is not per platform: conversations you started on Telegram appear in the terminal's picker
+and vice versa, and resuming one makes it active everywhere.
 
 Conversation IDs are plain incrementing numbers, so you can also skip the picker when you know the
 one you want:

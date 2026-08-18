@@ -34,7 +34,7 @@ var Commands = []Command{
 	{Name: cmdModel, Description: "Show which model is currently in use"},
 }
 
-func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (reply *Reply, err error) {
+func (a *Agent) handleCommand(ctx context.Context, source, text string) (reply *Reply, err error) {
 	name, arg, isCmd := parseCommand(text)
 	if !isCmd {
 		return nil, nil
@@ -46,14 +46,14 @@ func (a *Agent) handleCommand(ctx context.Context, sessionID, text string) (repl
 	case cmdHelp:
 		return &Reply{Text: handleHelp()}, nil
 	case cmdClear:
-		err := a.startNewConversation(ctx, sessionID)
+		err := a.startNewConversation(ctx, source)
 		if err != nil {
-			a.log.Errorf("[%s] Failed to start new conversation: %v", sessionID, err)
+			a.log.Errorf("[%s] Failed to start new conversation: %v", source, err)
 			return &Reply{Text: "Failed to start a new conversation."}, nil
 		}
 		return &Reply{Text: "Started a new conversation."}, nil
 	case cmdResume:
-		return a.handleResume(ctx, sessionID, arg)
+		return a.handleResume(ctx, source, arg)
 	case cmdGoal:
 		if arg == "" {
 			return &Reply{Text: "Usage: /goal <what you want me to work toward>"}, nil
@@ -92,9 +92,9 @@ type Conversation struct {
 	Preview string
 }
 
-func (a *Agent) handleResume(ctx context.Context, sessionID, arg string) (*Reply, error) {
+func (a *Agent) handleResume(ctx context.Context, source, arg string) (*Reply, error) {
 	if arg == "" {
-		conversations, err := a.listConversations(ctx, sessionID)
+		conversations, err := a.listConversations(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -104,21 +104,21 @@ func (a *Agent) handleResume(ctx context.Context, sessionID, arg string) (*Reply
 		return &Reply{Conversations: conversations}, nil
 	}
 
-	err := a.history.SetActiveConversation(ctx, sessionID, arg)
+	err := a.history.SetActiveConversation(ctx, arg)
 	if err != nil {
-		a.log.Errorf("[%s] Failed to resume conversation %s: %v", sessionID, arg, err)
+		a.log.Errorf("[%s] Failed to resume conversation %s: %v", source, arg, err)
 		return &Reply{Text: "Failed to resume that conversation."}, nil
 	}
 	return &Reply{Text: "Resumed previous conversation."}, nil
 }
 
-func (a *Agent) listConversations(ctx context.Context, sessionID string) ([]Conversation, error) {
-	activeID, err := a.history.ActiveConversation(ctx, sessionID)
+func (a *Agent) listConversations(ctx context.Context) ([]Conversation, error) {
+	activeID, err := a.history.ActiveConversation(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	summaries, err := a.history.ListConversations(ctx, sessionID, activeID, maxResumeChoices)
+	summaries, err := a.history.ListConversations(ctx, activeID, maxResumeChoices)
 	if err != nil {
 		return nil, err
 	}

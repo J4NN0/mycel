@@ -78,36 +78,40 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 }
 
 func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler agent.MessageHandler) {
-	sessionID := fmt.Sprintf("%d", msg.Chat.ID)
+	source := chatSource(msg.Chat.ID)
 
 	input := agent.Input{Text: msg.Text}
 	if len(msg.Photo) > 0 {
 		input.Text = msg.Caption
 		image, err := b.downloadPhoto(ctx, msg.Photo)
 		if err != nil {
-			b.log.Warningf("[%s] Failed to download photo: %v", sessionID, err)
+			b.log.Warningf("[%s] Failed to download photo: %v", source, err)
 			b.reply(msg, "I couldn't download that image, sorry.")
 			return
 		}
 		input.Images = []llm.Image{image}
 	}
 
-	b.log.Debugf("[%s] Message from %s: %s (%d image(s))", sessionID, msg.From.UserName, input.Text, len(input.Images))
+	b.log.Debugf("[%s] Message from %s: %s (%d image(s))", source, msg.From.UserName, input.Text, len(input.Images))
 
 	// No streaming: Telegram rate-limits message edits, so the reply is sent in one go.
-	result, err := handler(ctx, sessionID, input, nil)
+	result, err := handler(ctx, source, input, nil)
 	if err != nil {
 		b.log.Warningf("handler failed: %v", err)
 		return
 	}
 
 	if len(result.Conversations) > 0 {
-		b.sendResumePicker(msg.Chat.ID, sessionID, result.Conversations)
+		b.sendResumePicker(msg.Chat.ID, source, result.Conversations)
 		return
 	}
 
-	b.log.Debugf("[%s] Replying to %s: %s", sessionID, msg.From.UserName, result.Text)
+	b.log.Debugf("[%s] Replying to %s: %s", source, msg.From.UserName, result.Text)
 	b.reply(msg, result.Text)
+}
+
+func chatSource(chatID int64) string {
+	return fmt.Sprintf("telegram:%d", chatID)
 }
 
 func (b *Bot) reply(msg *tgbotapi.Message, text string) {
@@ -155,7 +159,7 @@ func (b *Bot) downloadPhoto(ctx context.Context, sizes []tgbotapi.PhotoSize) (ll
 	return llm.Image{Data: data}, nil
 }
 
-func (b *Bot) sendResumePicker(chatID int64, sessionID string, conversations []agent.Conversation) {
+func (b *Bot) sendResumePicker(chatID int64, source string, conversations []agent.Conversation) {
 	rows := make([][]tgbotapi.InlineKeyboardButton, len(conversations))
 	for i, c := range conversations {
 		rows[i] = tgbotapi.NewInlineKeyboardRow(
@@ -166,7 +170,7 @@ func (b *Bot) sendResumePicker(chatID int64, sessionID string, conversations []a
 	msg := tgbotapi.NewMessage(chatID, "Pick a conversation to resume:")
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 	if _, err := b.api.Send(msg); err != nil {
-		b.log.Warningf("[%s] Failed to send resume picker: %v", sessionID, err)
+		b.log.Warningf("[%s] Failed to send resume picker: %v", source, err)
 	}
 }
 
@@ -187,12 +191,12 @@ func (b *Bot) handleResumeCallback(ctx context.Context, cq *tgbotapi.CallbackQue
 		return
 	}
 
-	sessionID := fmt.Sprintf("%d", cq.Message.Chat.ID)
-	result, err := handler(ctx, sessionID, agent.Input{Text: "/resume " + conversationID}, nil)
+	source := chatSource(cq.Message.Chat.ID)
+	result, err := handler(ctx, source, agent.Input{Text: "/resume " + conversationID}, nil)
 
 	var text string
 	if err != nil {
-		b.log.Warningf("[%s] Failed to resume conversation %s: %v", sessionID, conversationID, err)
+		b.log.Warningf("[%s] Failed to resume conversation %s: %v", source, conversationID, err)
 		text = "Failed to resume that conversation."
 	} else {
 		text = result.Text

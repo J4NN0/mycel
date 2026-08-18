@@ -2,7 +2,7 @@
 
 Mycel always runs in your terminal. Give it a Telegram bot token and the same agent is reachable from your phone as well, both platforms served by the one process you started.
 
-Each channel keeps its own history: the terminal is one session, and every Telegram chat is another, keyed by chat ID.
+History is shared, not per channel: the chat continues whatever conversation is active, so you can start something in the terminal and pick it up on your phone. `/resume` on Telegram lists the same past conversations the terminal offers.
 
 This step is optional: without `TELEGRAM_BOT_TOKEN` the agent simply logs that the Telegram platform is disabled and carries on with the terminal UI.
 

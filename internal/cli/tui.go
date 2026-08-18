@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	sessionID    = "terminal"
+	source       = "terminal"
 	maxLines     = 5000
 	promptSymbol = "> "
 	userLabel    = "You"
@@ -200,7 +200,7 @@ func (m model) handleResumeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.busy = true
 		ctx, reply := m.ctx, m.handler
 		return m, func() tea.Msg {
-			result, err := reply(ctx, sessionID, agent.Input{Text: "/resume " + item.id}, nil)
+			result, err := reply(ctx, source, agent.Input{Text: "/resume " + item.id}, nil)
 			return replyMsg{reply: result, err: err}
 		}
 	default:
@@ -234,7 +234,7 @@ func (m model) submit() (tea.Model, tea.Cmd) {
 	return m, tea.Batch(
 		func() tea.Msg {
 			defer close(stream)
-			result, err := reply(ctx, sessionID, in, func(delta string) {
+			result, err := reply(ctx, source, in, func(delta string) {
 				select {
 				case stream <- delta:
 				case <-ctx.Done():
