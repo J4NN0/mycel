@@ -32,9 +32,11 @@ nav:
   - Commands:
       - Overview: commands/index.md
       - Commands: commands/commands.md
+  - Platforms:
+      - Overview: platforms/index.md
+      - Telegram: platforms/telegram.md
   - Tools:
       - Overview: tools/index.md
-      - Telegram: tools/telegram.md
       - Resend: tools/resend.md
 
 markdown_extensions:

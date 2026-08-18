@@ -1,10 +1,13 @@
 # Tools
 
-Mycel runs perfectly well with nothing plugged into it. Tools are what you add on top to give it more reach — another place to talk to it, or another action it can take on your behalf.
+Tools are the actions Mycel can take on your behalf, beyond writing an answer back to you. They are what the model reaches for when a reply is not enough — sending an email, for instance.
 
-Every tool is optional and switched on the same way: set its environment variables, restart the agent. Leave them unset and the tool is simply never registered — Mycel logs that it is disabled and starts without it.
+Mycel runs perfectly well with nothing plugged into it. Every tool is optional and switched on the same way: set its environment variables, restart the agent. Leave them unset and the tool is simply never registered — Mycel logs that it is disabled and starts without it.
 
-| Tool | What it adds | Enabled by |
+| Tool | What it lets Mycel do | Enabled by |
 | --- | --- | --- |
-| [Telegram](telegram.md) | Chat with Mycel from your phone, alongside the terminal | `TELEGRAM_BOT_TOKEN` |
-| [Resend](resend.md) | Let Mycel send emails on your behalf | `RESEND_API_KEY` + `RESEND_FROM` |
+| [Resend](resend.md) | Send emails on your behalf | `RESEND_API_KEY` + `RESEND_FROM` |
+
+!!! note "The model needs tool support"
+    Tool calling depends on the model. If `LLM_MODEL` has no `tools` capability, Mycel warns at
+    startup and every tool is ignored no matter how it is configured.

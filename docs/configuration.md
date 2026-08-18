@@ -29,7 +29,7 @@ existing environment, so `LLM_MODEL=llama3.2 mycel` works as a one-off override.
 | `PERSONA` | no | `neutral` | Voice the agent speaks in: `neutral`, `oracle` or `influencer`. |
 | `MAX_HISTORY_MESSAGES` | no | `20` | Message-count cap before history is compacted. |
 | `MAX_HISTORY_TOKENS` | no | `6000` | Prompt-token cap before history is compacted. |
-| `TELEGRAM_BOT_TOKEN` | no | — | Enables the [Telegram](tools/telegram.md) tool. |
+| `TELEGRAM_BOT_TOKEN` | no | — | Enables the [Telegram](platforms/telegram.md) platform. |
 | `REDIS_ADDR` | no | `localhost:6379` | Address of the Redis instance holding conversations. |
 | `LOG_LEVEL` | no | `info` | `panic`, `fatal`, `error`, `warn`, `info`, `debug` or `trace`. |
 | `RESEND_API_KEY` | no | — | Enables the [email tool](tools/resend.md), together with `RESEND_FROM`. |
