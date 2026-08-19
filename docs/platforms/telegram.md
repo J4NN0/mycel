@@ -1,5 +1,10 @@
 # Telegram
 
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `TELEGRAM_BOT_TOKEN` | no | — | Enables the Telegram platform. |
+| `TELEGRAM_ALLOWED_USER_IDS` | yes, if `TELEGRAM_BOT_TOKEN` is set | — | Comma-separated Telegram user IDs allowed to talk to the bot. Required once the token is set; the bot refuses to start without at least one. |
+
 Mycel always runs in your terminal. Give it a Telegram bot token and the same agent is reachable from your phone as well, both platforms served by the one process you started.
 
 History is shared, not per channel: the chat continues whatever conversation is active, so you can start something in the terminal and pick it up on your phone. `/resume` on Telegram lists the same past conversations the terminal offers.
@@ -13,10 +18,10 @@ This step is optional: without `TELEGRAM_BOT_TOKEN` the agent simply logs that t
 3. Copy the token BotFather gives you and set it as `TELEGRAM_BOT_TOKEN` in your `.env`.
 4. Get your numeric Telegram user ID — for example by messaging [@userinfobot](https://t.me/userinfobot) — and set it as `TELEGRAM_ALLOWED_USER_IDS`.
 
-```dotenv
-TELEGRAM_BOT_TOKEN=123456789:AA...
-TELEGRAM_ALLOWED_USER_IDS=987654321
-```
+    ```dotenv
+    TELEGRAM_BOT_TOKEN=123456789:AA...
+    TELEGRAM_ALLOWED_USER_IDS=987654321
+    ```
 
 Restart Mycel, open the chat with your bot and send `/start`.
 

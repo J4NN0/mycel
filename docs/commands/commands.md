@@ -13,8 +13,7 @@ Every command Mycel understands, and what it does.
 
 ## `/start`
 
-Just a simple greeting and nothing else: Mycel greets you and allows you to greet it back. It does not change any state, your dialogue with its entire history remain exactly the way you have left it. It exists mostly as a convention: chat clients tend to open a new conversation with a `/start`
-button, and this is what answers it.
+Just a simple greeting and nothing else: Mycel greets you and allows you to greet it back. It does not change any state, your dialogue with its entire history remain exactly the way you have left it. It exists mostly as a convention: chat clients tend to open a new conversation with a `/start` button, and this is what answers it.
 
 ## `/help`
 
@@ -27,8 +26,7 @@ Starts a new conversation. The model loses the thread — the next message begin
 
 Nothing is deleted. The previous conversation is kept, and you can come back to it with `/resume`.
 
-Conversations are shared across [platforms](../platforms/index.md), so clearing from Telegram also
-moves the terminal on to the new conversation.
+Conversations are shared across [platforms](../platforms/index.md), so clearing from Telegram also moves the terminal on to the new conversation.
 
 ## `/resume`
 
@@ -40,11 +38,9 @@ Brings back a past conversation. With no argument it lists your recent ones, eac
 
 The choices are presented however the client you're on presents them. Whichever you choose becomes the active conversation, and your next message continues it  with the full history restored.
 
-The list is not per platform: conversations you started on Telegram appear in the terminal's picker
-and vice versa, and resuming one makes it active everywhere.
+The list is not per platform: conversations you started on Telegram appear in the terminal's picker and vice versa, and resuming one makes it active everywhere.
 
-Conversation IDs are plain incrementing numbers, so you can also skip the picker when you know the
-one you want:
+Conversation IDs are plain incrementing numbers, so you can also skip the picker when you know the one you want:
 
 ```text
 /resume 3
@@ -66,5 +62,4 @@ It runs in the background: you get an immediate "Goal accepted" and stay free to
 
 ## `/model`
 
-Prints the model currently backing the agent — a quick way to confirm which `LLM_MODEL` took effect
-after editing your [configuration](../configuration.md).
+Prints the model currently backing the agent — a quick way to confirm which `LLM_MODEL` took effect after editing your [configuration](../configuration.md).

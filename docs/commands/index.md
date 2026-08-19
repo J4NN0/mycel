@@ -8,8 +8,7 @@ A command is any message beginning with `/`:
 /help
 ```
 
-This is handled by Mycel directly and responds instantly – without even reaching the model, incurs no tokens,
-and does not form part of your conversation history.
+This is handled by Mycel directly and responds instantly – without even reaching the model, incurs no tokens, and does not form part of your conversation history.
 
 ## Arguments
 
@@ -23,10 +22,8 @@ Commands that take an optional argument do something sensible without one — `/
 
 ## Getting them wrong
 
-Nothing breaks. A `/` message that Mycel doesn’t understand will be regarded as normal chat and sent
-through to the model. This means you get a response even if there’s a typo. Use `/help` if you want to know what exists.
+Nothing breaks. A `/` message that Mycel doesn’t understand will be regarded as normal chat and sent through to the model. This means you get a response even if there’s a typo. Use `/help` if you want to know what exists.
 
-No matter where you’re chatting with Mycel, the commands will be the same, and the client will usually
-help you to write them: just start typing `/`.
+No matter where you’re chatting with Mycel, the commands will be the same, and the client will usually help you to write them: just start typing `/`.
 
 **[See every command →](commands.md)**

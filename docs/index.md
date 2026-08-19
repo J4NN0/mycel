@@ -1,46 +1,27 @@
 # Mycel
 
-Mycel is a personal AI assistant that runs on your own machine. It talks to a local model through [Ollama](https://ollama.com), keeps your conversations stored, and is reachable from many places at  once (e.g., terminal, Telegram bot, etc.).
+Mycel is a personal AI assistant that runs on your own machine. It talks to a local model through [Ollama](https://ollama.com), remembers your conversations across sessions, and is reachable from more than one [platform](platforms/index.md) at once — the terminal and a Telegram chat today, more as they get added.
 
-These pages cover everything you need to set it up.
+Beyond conversation it can act: it reaches for a [tool](tools/index.md) — searching the web, reading a page, reading your files, sending an email — whenever a reply on its own isn't enough.
 
-## Where to start
+## How it works
 
-- **[Automatic install](setup/automatic.md)** — one command that installs whatever your machine
-  is missing, then builds the agent.
-- **[Manual install](setup/manual.md)** — Go, Ollama and Redis: the pieces Mycel needs to run at
-  all, installed one by one.
-- **[Configuration](configuration.md)** — every environment variable, what it does and where the
-  `.env` file lives.
-- **[Commands](commands/index.md)** — the `/` instructions you can send the agent itself.
-- **[Platforms](platforms/index.md)** — the places you can talk to Mycel from: the terminal, a
-  Telegram chat.
-- **[Tools](tools/index.md)** — optional integrations that extend what Mycel can do for you.
+```mermaid
+flowchart LR
+    you(("You"))
+    mycel("Mycel")
+    model[("Ollama\nlocal model")]
+    history[("Redis\nhistory")]
+    tools(("Tools"))
 
-## How the pieces fit
-
-```text
-        you                       you
-     (terminal)               (Telegram)      ← platforms
-         │                         │
-         └──────────┬──────────────┘
-                    │
-                 Mycel ──────────────► the web, Resend  ← tools
-                    │                └────► your files    ← local, read only
-        ┌───────────┼───────────────┐
-        │           │               │
-     Ollama       Redis          SearXNG
-  (local model)  (history)   (search, also local)
+    you -->|terminal, Telegram, ...| mycel
+    mycel --> model
+    mycel --> history
+    mycel --> tools
 ```
 
-Platforms are where you reach Mycel from; tools are what Mycel can reach out to. Everything else
-runs locally: the model, the history, the agent itself — your conversation is never sent to anyone
-to be answered.
+One process runs the agent, whichever platform a message arrives on: the same model, the same history and the same tools answer it, and switching platforms mid-conversation picks the thread back up rather than starting a new one. The model and the conversation history run locally, so nothing is sent anywhere just to be answered — what does leave your machine is only what a tool you asked for actually does, such as a search or a page fetch.
 
-What does leave your machine is what a platform or a tool carries out: a Telegram chat goes through
-Telegram, a search goes to your own SearXNG instance, an email goes to Resend, and asking Mycel to
-read a link sends a request to that site.
+## Get started
 
-Some tools point the other way. The [file tools](tools/files.md) read what is already on your
-machine and send nothing anywhere — but they can read any file your account can, so what Mycel is
-able to see is worth knowing about if the agent is reachable from more than your own terminal.
+**[Install Mycel →](setup/automatic.md)**

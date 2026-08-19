@@ -1,4 +1,9 @@
-# Resend
+# Email
+
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `RESEND_API_KEY` | no | — | API key for [Resend](https://resend.com), used to send mail. |
+| `RESEND_FROM` | no | — | Sender address used by the email tool. |
 
 Mycel can send emails on your behalf through [Resend](https://resend.com). This is optional: the `send_email` tool is only registered when **both** `RESEND_API_KEY` and `RESEND_FROM` are set. Otherwise, the agent starts without it and simply cannot send mail.
 
@@ -30,7 +35,7 @@ Set the address the mail is sent from as `RESEND_FROM`:
     RESEND_FROM=agent@yourdomain.com
     ```
 
-## Using it
+## Usage
 
 Just ask, in the terminal or on Telegram:
 

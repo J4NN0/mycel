@@ -8,10 +8,12 @@ The rest have nothing to configure, so they are always there (e.g., reading a we
 
 | Tool | What it lets Mycel do | Enabled by |
 | --- | --- | --- |
-| [Resend](resend.md) | Send emails on your behalf | `RESEND_API_KEY` + `RESEND_FROM` |
-| [Web search](web.md) | Search the web for what is true today | on by default (bundled SearXNG) |
-| [Web read](web.md) | Read a page and use what it says | always on |
-| [Files](files.md) | List, search and read files on your machine | always on |
+| [Email](email.md) | Send emails on your behalf | `RESEND_API_KEY` + `RESEND_FROM` |
+| [Web search](web_search.md) | Search the web for what is true today | on by default (bundled SearXNG) |
+| [Fetch URL](fetch_url.md) | Read a page and use what it says | always on |
+| [List files](list_files.md) | List what's in a folder | always on |
+| [Grep files](grep_files.md) | Search the text of files in a folder | always on |
+| [Read file](read_file.md) | Read one file | always on |
 
 !!! note "The model needs tool support"
     Tool calling depends on the model. If `LLM_MODEL` has no `tools` capability, Mycel warns at

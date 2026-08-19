@@ -37,9 +37,12 @@ nav:
       - Telegram: platforms/telegram.md
   - Tools:
       - Overview: tools/index.md
-      - Web: tools/web.md
-      - Files: tools/files.md
-      - Resend: tools/resend.md
+      - Web search: tools/web_search.md
+      - Fetch URL: tools/fetch_url.md
+      - List files: tools/list_files.md
+      - Grep files: tools/grep_files.md
+      - Read file: tools/read_file.md
+      - Email: tools/email.md
 
 markdown_extensions:
   - admonition
@@ -52,6 +55,10 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
