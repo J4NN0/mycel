@@ -26,7 +26,7 @@ These pages cover everything you need to set it up.
          └──────────┬──────────────┘
                     │
                  Mycel ──────────────► the web, Resend  ← tools
-                    │
+                    │                └────► your files    ← local, read only
         ┌───────────┼───────────────┐
         │           │               │
      Ollama       Redis          SearXNG
@@ -39,5 +39,8 @@ to be answered.
 
 What does leave your machine is what a platform or a tool carries out: a Telegram chat goes through
 Telegram, a search goes to your own SearXNG instance, an email goes to Resend, and asking Mycel to
-read a link sends a request to that site. Reading a link is the only one of those that is on by
-default, and it never reaches anything on your own machine or local network.
+read a link sends a request to that site.
+
+Some tools point the other way. The [file tools](tools/files.md) read what is already on your
+machine and send nothing anywhere — but they can read any file your account can, so what Mycel is
+able to see is worth knowing about if the agent is reachable from more than your own terminal.

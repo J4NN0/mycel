@@ -38,6 +38,7 @@ nav:
   - Tools:
       - Overview: tools/index.md
       - Web: tools/web.md
+      - Files: tools/files.md
       - Resend: tools/resend.md
 
 markdown_extensions:

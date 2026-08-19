@@ -6,7 +6,7 @@
 
 Mycel is a personal AI agent that runs on your own machine. It remembers your conversations and is reachable from wherever you are: a terminal, a Telegram chat, and more, with one shared conversation across all of them.
 
-Hold a real conversation, think a problem through, look at a screenshot, search the web, send an email, or hand it a goal and let it work through the steps on its own.
+Hold a real conversation, think a problem through, look at a screenshot, search the web, read through your own files, send an email, or hand it a goal and let it work through the steps on its own.
 
 See the [full documentation](docs/) for how it works, what it can do, and how to configure it.
 

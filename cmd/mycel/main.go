@@ -60,7 +60,7 @@ func main() {
 func loadTools(log logger.Logger, cfg config.Tool) []tool.Tool {
 	var tools []tool.Tool
 
-	tools = append(tools, tool.NewFetchURL(log))
+	tools = append(tools, tool.NewFetchURL(log), tool.NewListFiles(log), tool.NewGrepFiles(log), tool.NewReadFile(log))
 	if webSearch := tool.NewWebSearch(log, cfg.SearxngURL); webSearch != nil {
 		tools = append(tools, webSearch)
 	}
