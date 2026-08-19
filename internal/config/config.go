@@ -29,7 +29,8 @@ type General struct {
 }
 
 type Platform struct {
-	TelegramBotToken string `envconfig:"TELEGRAM_BOT_TOKEN"`
+	TelegramBotToken       string  `envconfig:"TELEGRAM_BOT_TOKEN"`
+	TelegramAllowedUserIDs []int64 `envconfig:"TELEGRAM_ALLOWED_USER_IDS"`
 }
 
 type Tool struct {

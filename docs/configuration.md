@@ -35,6 +35,7 @@ Configuration is grouped in three: the general settings that shape the agent its
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
 | `TELEGRAM_BOT_TOKEN` | no | — | Enables the [Telegram](platforms/telegram.md) platform. |
+| `TELEGRAM_ALLOWED_USER_IDS` | yes, if `TELEGRAM_BOT_TOKEN` is set | — | Comma-separated Telegram user IDs allowed to talk to the bot. Required once the token is set; the bot refuses to start without at least one. |
 
 ### Tool
 

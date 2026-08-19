@@ -76,7 +76,7 @@ func loadPlatforms(log logger.Logger, cfg config.Platform) []agent.Platform {
 	platforms := []agent.Platform{cli.New(log, appName)}
 
 	if cfg.TelegramBotToken != "" {
-		bot, err := telegram.NewBot(cfg.TelegramBotToken, log)
+		bot, err := telegram.NewBot(cfg.TelegramBotToken, cfg.TelegramAllowedUserIDs, log)
 		if err != nil {
 			log.Fatalf("telegram bot initialization failed: %v", err)
 			return nil

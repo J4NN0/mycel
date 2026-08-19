@@ -23,11 +23,16 @@ const (
 )
 
 type Bot struct {
-	api *tgbotapi.BotAPI
-	log logger.Logger
+	api            *tgbotapi.BotAPI
+	log            logger.Logger
+	allowedUserIDs map[int64]struct{}
 }
 
-func NewBot(token string, log logger.Logger) (*Bot, error) {
+func NewBot(token string, allowedUserIDs []int64, log logger.Logger) (*Bot, error) {
+	if len(allowedUserIDs) == 0 {
+		return nil, fmt.Errorf("telegram: TELEGRAM_ALLOWED_USER_IDS must list at least one Telegram user id")
+	}
+
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create telegram bot: %w", err)
@@ -42,9 +47,14 @@ func NewBot(token string, log logger.Logger) (*Bot, error) {
 		return nil, fmt.Errorf("failed to register bot commands: %w", err)
 	}
 
-	log.Printf("Telegram bot @%s ready", api.Self.UserName)
+	allowed := make(map[int64]struct{}, len(allowedUserIDs))
+	for _, id := range allowedUserIDs {
+		allowed[id] = struct{}{}
+	}
 
-	return &Bot{api: api, log: log}, nil
+	log.Printf("Telegram bot @%s ready (%d allowed user(s))", api.Self.UserName, len(allowed))
+
+	return &Bot{api: api, log: log, allowedUserIDs: allowed}, nil
 }
 
 func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
@@ -62,6 +72,10 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 			if !ok {
 				return nil
 			}
+			if !b.isAllowed(update.SentFrom()) {
+				b.log.Warningf("ignoring update from unauthorized telegram sender: %s", describeSender(update.SentFrom()))
+				continue
+			}
 			if update.CallbackQuery != nil {
 				go b.handleCallback(ctx, update.CallbackQuery, handler)
 				continue
@@ -75,6 +89,21 @@ func (b *Bot) Run(ctx context.Context, handler agent.MessageHandler) error {
 			go b.handleMessage(ctx, update.Message, handler)
 		}
 	}
+}
+
+func (b *Bot) isAllowed(user *tgbotapi.User) bool {
+	if user == nil {
+		return false
+	}
+	_, ok := b.allowedUserIDs[user.ID]
+	return ok
+}
+
+func describeSender(user *tgbotapi.User) string {
+	if user == nil {
+		return "unknown (no From, likely a channel post)"
+	}
+	return fmt.Sprintf("%d (%s)", user.ID, user.UserName)
 }
 
 func (b *Bot) handleMessage(ctx context.Context, msg *tgbotapi.Message, handler agent.MessageHandler) {
