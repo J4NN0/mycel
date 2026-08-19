@@ -19,8 +19,6 @@ const (
 	emailDesc = "Send an email on the user's behalf. Only call this when the user's latest message explicitly asks for an email to be sent. Never call it to test it, to demonstrate it, or to check whether it works."
 
 	emailTimeout = 30 * time.Second
-
-	toDesc = "Recipient email address, exactly as the user gave it. Never invent an address and never use a placeholder such as one at example.com. If you do not have a real recipient, ask the user instead of calling this tool."
 )
 
 var reservedDomains = []string{"example", "example.com", "example.net", "example.org", "example.edu", "invalid", "test", "localhost"}
@@ -64,6 +62,8 @@ func (t *Email) Info() (string, string) {
 }
 
 func (t *Email) Definition() schemas.ChatTool {
+	const toDesc = "Recipient email address, exactly as the user gave it. Never invent an address and never use a placeholder such as one at example.com. If you do not have a real recipient, ask the user instead of calling this tool."
+
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "to", Value: map[string]string{"type": "string", "description": toDesc}},
 		schemas.Pair{Key: "subject", Value: map[string]string{"type": "string", "description": "Email subject line"}},

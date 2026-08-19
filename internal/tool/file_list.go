@@ -14,7 +14,6 @@ import (
 const (
 	listFilesName = "list_files"
 	listFilesDesc = "List what is in a folder on the user's machine: the names of the files and folders it holds, with sizes. Give it a full path. Use it to find out what is actually there before reading anything, and to work down through folders a level at a time."
-	listPathDesc  = "Full path of the folder to list, such as /Users/you/notes or ~/notes. Use the path exactly as the user gave it, or exactly as another tool reported it."
 
 	maxListEntries = 200
 )
@@ -36,6 +35,8 @@ func (t *ListFiles) Info() (string, string) {
 }
 
 func (t *ListFiles) Definition() schemas.ChatTool {
+	const listPathDesc = "Full path of the folder to list, such as /Users/you/notes or ~/notes. Use the path exactly as the user gave it, or exactly as another tool reported it."
+
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "path", Value: map[string]string{"type": "string", "description": listPathDesc}},
 	)

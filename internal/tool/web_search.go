@@ -25,8 +25,6 @@ const (
 	searchMaxResults  = 5
 	searchMaxSnippet  = 300
 	searchMaxBodySize = 1 << 20
-
-	queryDesc = "What to search for, in plain words. Keep it short and keyword-like, the way a search box expects — not a sentence addressed to a person."
 )
 
 var _ Tool = (*Search)(nil)
@@ -107,6 +105,8 @@ func (t *Search) Info() (string, string) {
 }
 
 func (t *Search) Definition() schemas.ChatTool {
+	const queryDesc = "What to search for, in plain words. Keep it short and keyword-like, the way a search box expects — not a sentence addressed to a person."
+
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "query", Value: map[string]string{"type": "string", "description": queryDesc}},
 	)

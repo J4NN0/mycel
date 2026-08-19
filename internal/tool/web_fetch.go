@@ -30,8 +30,6 @@ const (
 	fetchMaxChars = 6000
 
 	userAgent = "Mycel (+https://github.com/J4NN0/mycel)"
-
-	urlDesc = "Absolute http or https URL to read, exactly as the user gave it or exactly as web_search returned it. Never invent a URL and never guess one."
 )
 
 var _ Tool = (*Fetch)(nil)
@@ -59,6 +57,8 @@ func (t *Fetch) Info() (string, string) {
 }
 
 func (t *Fetch) Definition() schemas.ChatTool {
+	const urlDesc = "Absolute http or https URL to read, exactly as the user gave it or exactly as web_search returned it. Never invent a URL and never guess one."
+
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "url", Value: map[string]string{"type": "string", "description": urlDesc}},
 	)

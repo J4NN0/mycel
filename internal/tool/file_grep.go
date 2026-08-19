@@ -14,10 +14,8 @@ import (
 )
 
 const (
-	grepFilesName   = "grep_files"
-	grepFilesDesc   = "Search the text of the files in a folder and return the lines that match, each with its file and line number. Give it a full path and a pattern. This is how you find where something is written without opening files one by one; read_file afterwards when you need the text around a match."
-	grepPatternDesc = "What to look for, as a regular expression. Plain words work as themselves. An all-lowercase pattern matches regardless of case; include a capital letter to match case exactly."
-	grepPathDesc    = "Full path of the folder to search, such as /Users/you/notes or ~/notes. Every file below it is searched, so name the narrowest folder that could hold what you are after."
+	grepFilesName = "grep_files"
+	grepFilesDesc = "Search the text of the files in a folder and return the lines that match, each with its file and line number. Give it a full path and a pattern. This is how you find where something is written without opening files one by one; read_file afterwards when you need the text around a match."
 
 	maxMatches     = 50
 	maxGrepLine    = 200
@@ -50,6 +48,11 @@ func (t *GrepFiles) Info() (string, string) {
 }
 
 func (t *GrepFiles) Definition() schemas.ChatTool {
+	const (
+		grepPatternDesc = "What to look for, as a regular expression. Plain words work as themselves. An all-lowercase pattern matches regardless of case; include a capital letter to match case exactly."
+		grepPathDesc    = "Full path of the folder to search, such as /Users/you/notes or ~/notes. Every file below it is searched, so name the narrowest folder that could hold what you are after."
+	)
+
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "pattern", Value: map[string]string{"type": "string", "description": grepPatternDesc}},
 		schemas.Pair{Key: "path", Value: map[string]string{"type": "string", "description": grepPathDesc}},

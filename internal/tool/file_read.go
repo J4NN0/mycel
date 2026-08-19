@@ -17,7 +17,6 @@ import (
 const (
 	readFileName = "read_file"
 	readFileDesc = "Read a text file on the user's machine and return what is in it. Give it a full path, the one the user gave you or one that list_files or grep_files reported. Reach for grep_files rather than opening file after file looking for something, and never guess at a path: ask the user where the file is."
-	readPathDesc = "Full path of the file to read, such as /Users/you/notes/todo.md or ~/notes/todo.md. Use the path exactly as the user gave it, or exactly as another tool reported it."
 
 	readMaxChars = 8000
 	binaryProbe  = 64 << 10
@@ -40,6 +39,8 @@ func (t *ReadFile) Info() (string, string) {
 }
 
 func (t *ReadFile) Definition() schemas.ChatTool {
+	const readPathDesc = "Full path of the file to read, such as /Users/you/notes/todo.md or ~/notes/todo.md. Use the path exactly as the user gave it, or exactly as another tool reported it."
+
 	props := schemas.NewOrderedMapFromPairs(
 		schemas.Pair{Key: "path", Value: map[string]string{"type": "string", "description": readPathDesc}},
 	)
