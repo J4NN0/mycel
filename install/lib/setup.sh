@@ -6,6 +6,8 @@ CONFIG_DIR="$HOME/.config/mycel"
 CONFIG_ENV="$CONFIG_DIR/.env"
 
 REDIS_HOST=""
+SEARXNG_HOST=""
+SEARXNG_PORT=""
 REDIS_PORT=""
 LLM_MODEL_NAME=""
 
@@ -51,14 +53,59 @@ setup_config_env() {
 	REDIS_HOST="${addr%:*}"
 	REDIS_PORT="${addr##*:}"
 
+	local url="${SEARXNG_URL:-}"
+	[ -n "$url" ] || url="$(env_file_value SEARXNG_URL "$CONFIG_ENV")"
+	[ -n "$url" ] || url="$(env_file_value SEARXNG_URL "$REPO_ROOT/.env.sample")"
+	[ -n "$url" ] || url="http://localhost:8888"
+	searxng_host_port "$url"
+
 	LLM_MODEL_NAME="${LLM_MODEL:-}"
 	[ -n "$LLM_MODEL_NAME" ] || LLM_MODEL_NAME="$(env_file_value LLM_MODEL "$CONFIG_ENV")"
 	[ -n "$LLM_MODEL_NAME" ] || LLM_MODEL_NAME="$(env_file_value LLM_MODEL "$REPO_ROOT/.env.sample")"
 
-	log_info "Redis at $REDIS_HOST:$REDIS_PORT, model $LLM_MODEL_NAME"
+	log_info "Redis at $REDIS_HOST:$REDIS_PORT, SearXNG at $SEARXNG_HOST:$SEARXNG_PORT, model $LLM_MODEL_NAME"
+}
+
+# searxng_host_port — split a URL into the host and port to probe. Only an explicit
+# port is trustworthy, so fall back to what the scheme implies.
+searxng_host_port() {
+	local url="$1" hostport
+
+	hostport="${url#*://}"
+	hostport="${hostport%%/*}"
+
+	SEARXNG_HOST="${hostport%:*}"
+	if [ "$hostport" = "$SEARXNG_HOST" ]; then
+		case "$url" in
+		https://*) SEARXNG_PORT=443 ;;
+		*) SEARXNG_PORT=80 ;;
+		esac
+	else
+		SEARXNG_PORT="${hostport##*:}"
+	fi
 }
 
 # docker_compose_up_redis — start the Redis the repo ships with.
+# docker_compose_up_searxng — start the SearXNG the repo ships with. Same deal as
+# Redis: it is part of the standard setup, so it comes up without being asked for.
+docker_compose_up_searxng() {
+	if [ "$CHECK_ONLY" = "1" ]; then
+		log_warn "nothing listening on $SEARXNG_HOST:$SEARXNG_PORT"
+		summary_add "searxng" missing "not running"
+		return 1
+	fi
+
+	log_step "Starting SearXNG"
+	if ! (cd "$REPO_ROOT" && run docker compose up -d --wait searxng); then
+		log_err "could not start SearXNG with docker compose"
+		summary_add "searxng" failed "docker compose up failed"
+		return 1
+	fi
+
+	log_ok "SearXNG running at $SEARXNG_HOST:$SEARXNG_PORT"
+	summary_add "searxng" installed "$SEARXNG_HOST:$SEARXNG_PORT"
+}
+
 docker_compose_up_redis() {
 	if [ "$CHECK_ONLY" = "1" ]; then
 		log_warn "nothing listening on $REDIS_HOST:$REDIS_PORT"

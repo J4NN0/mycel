@@ -35,6 +35,7 @@ type Platform struct {
 type Tool struct {
 	ResendAPIKey string `envconfig:"RESEND_API_KEY"`
 	ResendFrom   string `envconfig:"RESEND_FROM"`
+	SearxngURL   string `envconfig:"SEARXNG_URL" default:"http://localhost:8888"`
 }
 
 func ReadConfig() (Config, error) {

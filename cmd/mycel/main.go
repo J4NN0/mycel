@@ -60,6 +60,11 @@ func main() {
 func loadTools(log logger.Logger, cfg config.Tool) []tool.Tool {
 	var tools []tool.Tool
 
+	tools = append(tools, tool.NewFetchURL(log))
+	if webSearch := tool.NewWebSearch(log, cfg.SearxngURL); webSearch != nil {
+		tools = append(tools, webSearch)
+	}
+
 	if email := tool.NewEmail(log, cfg.ResendAPIKey, cfg.ResendFrom); email != nil {
 		tools = append(tools, email)
 	}

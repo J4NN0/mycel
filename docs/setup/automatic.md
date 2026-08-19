@@ -1,6 +1,6 @@
 # Automatic installation
 
-Mycel needs three things before it can start: a Go toolchain to build the project, Ollama to run the model(s), and Docker (i.e., Redis to store conversations, etc.). The installer puts all of them there for you.
+Mycel needs three things before it can start: a Go toolchain to build the project, Ollama to run the model(s), and Docker (which runs Redis for conversations and SearXNG for web search). The installer puts all of them there for you.
 
 ## Checking what is missing
 
@@ -45,9 +45,6 @@ Pass these to `./install/install.sh` directly:
 |----------------|---------------------------------------------------------------|
 | `--core-only`  | only what is needed to run: skip the docs and lint toolchains  |
 | `--skip-model` | don't pull the model; Mycel pulls it on first run instead       |
-
-Already have a Redis you manage? Point `REDIS_ADDR` at it and the Docker step disappears on
-its own — there is nothing to pass.
 
 !!! note "Supported platforms"
     macOS and Linux. On macOS the installer goes through Homebrew, offering to install it

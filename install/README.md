@@ -25,15 +25,15 @@ That is the only question, and there is nothing to confirm when nothing is missi
 | `git`, `make`   | fetching and building                   | package manager (macOS: Xcode Command Line Tools)    |
 | Go              | building the agent                      | Homebrew on macOS, official tarball on Linux         |
 | Ollama          | running the local model                 | Homebrew on macOS, `ollama.com/install.sh` on Linux  |
-| Docker          | running Redis, which stores history     | Docker Desktop on macOS, `get.docker.com` on Linux   |
+| Docker          | running Redis (history) and SearXNG (search) | Docker Desktop on macOS, `get.docker.com` on Linux   |
 | Python 3 + venv | `make docs` (MkDocs in its own venv)    | package manager (plus `python3-venv` on Debian)      |
 | golangci-lint   | `make lint`                             | Homebrew on macOS, `go install` elsewhere            |
 
-It then writes `~/.config/mycel/.env` (from your `.env`, or from `.env.sample`), puts `mycel` in `$GOPATH/bin`, adds that directory to your `PATH` if it is missing, starts Redis and pulls the model named by `LLM_MODEL`.
+It then writes `~/.config/mycel/.env` (from your `.env`, or from `.env.sample`), puts `mycel` in `$GOPATH/bin`, adds that directory to your `PATH` if it is missing, starts Redis and SearXNG, and pulls the model named by `LLM_MODEL`.
 
 The required Go version is read from `go.mod`, so the installer and the build can never disagree. A Go older than that is still accepted from 1.21 onwards, because Go downloads the toolchain `go.mod` asks for on its own.
 
-Redis is only installed when it has to be: if something already answers on `REDIS_ADDR`, Docker is never touched. Point `REDIS_ADDR` at a Redis you manage and the whole Docker step disappears.
+Neither container is started when it does not have to be: if something already answers on `REDIS_ADDR` and `SEARXNG_URL`, Docker is never touched. Point either variable at an instance you manage and that step disappears.
 
 ## Options
 
@@ -76,7 +76,7 @@ install/
     ├── log.sh        output, prompts, the summary table
     ├── platform.sh   OS/arch/package-manager detection, version compare, PATH edits
     ├── deps.sh       one ensure_* function per dependency
-    └── setup.sh      config file, Redis, binary, model
+    └── setup.sh      config file, Redis, SearXNG, binary, model
 ```
 
 Both entry points share `run_steps` in `bootstrap.sh`; the only difference is that

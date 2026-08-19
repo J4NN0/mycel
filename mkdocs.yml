@@ -37,6 +37,7 @@ nav:
       - Telegram: platforms/telegram.md
   - Tools:
       - Overview: tools/index.md
+      - Web: tools/web.md
       - Resend: tools/resend.md
 
 markdown_extensions:

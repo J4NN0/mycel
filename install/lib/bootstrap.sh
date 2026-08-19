@@ -41,6 +41,7 @@ run_steps() {
 	log_title "Runtime dependencies"
 	ensure_ollama || true
 	ensure_redis || true
+	ensure_searxng || true
 
 	if [ "$CORE_ONLY" = "1" ]; then
 		log_info "skipping the docs and lint toolchains (--core-only)"

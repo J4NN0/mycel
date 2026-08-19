@@ -148,6 +148,34 @@ ensure_redis() {
 	docker_compose_up_redis
 }
 
+# ensure_searxng — web search runs through SearXNG. Anything already listening on
+# SEARXNG_URL is good enough; otherwise Docker runs the bundled one, so pointing
+# SEARXNG_URL at an instance you manage skips the Docker step entirely.
+ensure_searxng() {
+	local host="${SEARXNG_HOST:-localhost}" port="${SEARXNG_PORT:-8888}"
+
+	if port_open "$host" "$port"; then
+		log_ok "SearXNG reachable at $host:$port"
+		summary_add "searxng" ok "$host:$port"
+		return 0
+	fi
+
+	case "$host" in
+	localhost | 127.0.0.1 | ::1 | "") ;;
+	*)
+		log_warn "nothing listening on $host:$port — web search stays off until it answers"
+		summary_add "searxng" missing "$host:$port unreachable"
+		return 1
+		;;
+	esac
+
+	ensure_docker || {
+		summary_add "searxng" missing "needs Docker"
+		return 1
+	}
+	docker_compose_up_searxng
+}
+
 ensure_docker() {
 	if have docker && docker info >/dev/null 2>&1; then
 		log_ok "Docker running"
@@ -167,7 +195,7 @@ ensure_docker() {
 		return 0
 	fi
 
-	dep_install_start "docker" "Docker not found (runs Redis for conversation history)" || return 1
+	dep_install_start "docker" "Docker not found (runs Redis and SearXNG)" || return 1
 
 	if [ "$OS" = "macos" ]; then
 		ensure_homebrew || return 1

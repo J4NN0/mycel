@@ -16,7 +16,7 @@ Variables already set in your shell always win: the config file is loaded withou
 
 ## Variables
 
-Configuration is grouped in three: the general settings that shape the agent itself, the [platforms](platforms/index.md) it can be reached on, and the [tools](tools/index.md) it can call. Platforms and tools are all optional — each one stays off until its variables are set.
+Configuration is grouped in three: the general settings that shape the agent itself, the [platforms](platforms/index.md) it can be reached on, and the [tools](tools/index.md) it can call. Some of the platforms and tools are optional — each one stays off until its variables are set.
 
 ### General
 
@@ -40,10 +40,9 @@ Configuration is grouped in three: the general settings that shape the agent its
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
+| `SEARXNG_URL` | no | `http://localhost:8888` | Where the [SearXNG](tools/web.md) behind web search listens. |
 | `RESEND_API_KEY` | no | — | API key for the [email tool](tools/resend.md). |
 | `RESEND_FROM` | no | — | Sender address used by the email tool. |
-
-The email tool needs both variables: set only one and the tool stays off.
 
 ## Personas
 

@@ -1,0 +1,19 @@
+use_default_settings: true
+
+general:
+  instance_name: "Mycel"
+  donation_url: false
+  contact_url: false
+
+server:
+  # Change this on any instance that is reachable by anything other than you.
+  secret_key: "mycel-local-instance"
+  # The bot limiter answers programmatic requests with 403, which is what Mycel makes.
+  limiter: false
+  image_proxy: false
+
+search:
+  # SearXNG serves html only unless json is listed here, and Mycel needs json.
+  formats:
+    - html
+    - json

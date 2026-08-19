@@ -13,6 +13,7 @@ require (
 	github.com/redis/go-redis/v9 v9.19.0
 	github.com/resend/resend-go/v3 v3.9.2
 	github.com/sirupsen/logrus v1.9.4
+	golang.org/x/net v0.52.0
 )
 
 require (
@@ -90,7 +91,6 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect

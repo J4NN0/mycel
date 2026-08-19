@@ -24,6 +24,21 @@ services:
     ports:
       - "8081:8081"
 
+  searxng:
+    image: searxng/searxng:latest
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    ports:
+      - "8888:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   app:
     build: .
     depends_on:
@@ -35,6 +50,7 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - REDIS_ADDR=redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - SEARXNG_URL=${SEARXNG_URL:-http://searxng:8080}
 
 volumes:
   redis_data:

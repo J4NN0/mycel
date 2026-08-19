@@ -44,8 +44,21 @@ lint:
 	golangci-lint run ./... --timeout=3m
 .PHONY: lint
 
+# === TEST =======================================================
+test:
+	@echo "---> Running tests"
+	go test ./...
+.PHONY: test
+
+# Run the tests and report coverage per function
+test-cover:
+	@echo "---> Running tests with coverage"
+	go test -coverprofile=$(COVER_PROFILE) ./...
+	go tool cover -func=$(COVER_PROFILE)
+.PHONY: test-cover
+
 # === DEVELOPMENT =======================================================
-pre-commit: mod-tidy fmt build lint vet
+pre-commit: mod-tidy fmt build test lint vet
 
 # === DOCS =======================================================
 DOCS_VENV=build/docs-venv

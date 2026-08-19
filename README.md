@@ -6,7 +6,7 @@
 
 Mycel is a personal AI assistant that runs on your own machine. It talks to a local model through [Ollama](https://ollama.com), remembers your conversations, and answers from wherever you are: a terminal UI, a Telegram chat, etc.
 
-Hold a real conversation, think a problem through, look at a screenshot, or hand it a goal and let it work through the steps on its own. Nothing leaves your machine unless you explicitly wire up a tool that sends something out.
+Hold a real conversation, think a problem through, look at a screenshot, look something up on the web, or hand it a goal and let it work through the steps on its own.
 
 ## Table of Contents
 
