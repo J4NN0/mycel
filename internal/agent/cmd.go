@@ -58,7 +58,7 @@ func (a *Agent) handleCommand(ctx context.Context, source, text string) (reply *
 		if arg == "" {
 			return &Reply{Text: "Usage: /goal <what you want me to work toward>"}, nil
 		}
-		go a.runGoal(ctx, arg)
+		go a.runGoal(ctx, source, arg)
 		return &Reply{Text: "Goal accepted. Working on it…"}, nil
 	case cmdModel:
 		return &Reply{Text: fmt.Sprintf("Currently running on %s", a.provider.Model())}, nil
