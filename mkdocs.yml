@@ -1,5 +1,6 @@
 site_name: Mycel
 site_description: A personal AI assistant that runs on your own machine.
+site_url: https://j4nn0.github.io/mycel/
 repo_url: https://github.com/J4NN0/mycel
 repo_name: J4NN0/mycel
 edit_uri: edit/main/docs/
