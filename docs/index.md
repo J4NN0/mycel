@@ -1,8 +1,12 @@
 # Mycel
 
+<figure markdown="span">
+  ![Mycel](assets/mycel.png){ width="400" }
+</figure>
+
 Mycel is a personal AI assistant that runs on your own machine. It talks to a local model through [Ollama](https://ollama.com), remembers your conversations across sessions, and is reachable from more than one [platform](platforms/index.md) at once — the terminal and a Telegram chat today, more as they get added.
 
-Beyond conversation it can act: it reaches for a [tool](tools/index.md) — searching the web, reading a page, reading your files, sending an email — whenever a reply on its own isn't enough.
+Beyond conversation, it can act: it reaches for a [tool](tools/index.md) — searching the web, reading a page, reading your files, sending an email — whenever a reply on its own isn't enough.
 
 ## How it works
 
