@@ -4,9 +4,11 @@
   <img src="assets/mycel.png" width="300" alt="mycel">
 </p>
 
-Mycel is a personal AI assistant that runs on your own machine. It talks to a local model through [Ollama](https://ollama.com), remembers your conversations, and answers from wherever you are: a terminal UI, a Telegram chat, etc.
+Mycel is a personal AI agent that runs on your own machine. It remembers your conversations and is reachable from wherever you are: a terminal, a Telegram chat, and more, with one shared conversation across all of them.
 
-Hold a real conversation, think a problem through, look at a screenshot, look something up on the web, or hand it a goal and let it work through the steps on its own.
+Hold a real conversation, think a problem through, look at a screenshot, search the web, send an email, or hand it a goal and let it work through the steps on its own.
+
+See the [full documentation](docs/) for how it works, what it can do, and how to configure it.
 
 ## Table of Contents
 
@@ -25,12 +27,7 @@ cd mycel
 make install
 ```
 
-It checks what your machine is missing and installs it. See [its README](install/README.md) or the
-[automatic install guide](docs/setup/automatic.md). Prefer to install the pieces yourself? [Manual install](docs/setup/manual.md) walks through them one by one.
-
-Not sure what is missing? `make doctor` reports it without installing anything.
-
-Once installed, fill in the variable that are relevant for you (e.g., Telegram, Resend, etc.) in `~/.config/mycel/.env`. Every variable is documented in the [configuration reference](docs/configuration.md).
+It checks what your machine is missing, installs it, and builds the agent. See [setup](docs/setup/automatic.md) and [configuration](docs/configuration.md) in the docs for the details.
 
 ## Run
 
@@ -40,9 +37,7 @@ From any directory:
 mycel
 ```
 
-It reads `~/.config/mycel/.env`, starts Ollama and pulls the model if it isn't there yet.
-
-Changed the code? `make install` rebuilds and reinstalls the binary — it re-checks the dependencies first, which takes under a second when they are all in place.
+That opens the terminal UI. See [platforms](docs/platforms/index.md) for the other ways to reach Mycel.
 
 ## Documentation
 
@@ -56,5 +51,6 @@ Then open [localhost:8000](http://localhost:8000). The first run installs the do
 
 ## Resources
 - [Bifrost](https://docs.getbifrost.ai/quickstart/go-sdk/setting-up)
+- [Ollama](https://ollama.com)
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 - [MkDocs](https://www.mkdocs.org/)
