@@ -8,7 +8,7 @@ Mycel is a personal AI agent that runs on your own machine. It remembers your co
 
 Hold a real conversation, think a problem through, look at a screenshot, search the web, read through your own files, send an email, or hand it a goal and let it work through the steps on its own.
 
-See the [full documentation](docs/) for how it works, what it can do, and how to configure it.
+See the [full documentation](https://j4nn0.github.io/mycel/) for how it works, what it can do, and how to configure it.
 
 ## Table of Contents
 
@@ -41,7 +41,7 @@ That opens the terminal UI. See [platforms](docs/platforms/index.md) for the oth
 
 ## Documentation
 
-The full docs live in [`docs/`](docs/). To read them locally:
+The full docs are hosted at [j4nn0.github.io/mycel](https://j4nn0.github.io/mycel/), built from [`docs/`](docs/). To read them locally instead:
 
 ```sh
 make docs
