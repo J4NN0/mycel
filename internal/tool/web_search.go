@@ -93,7 +93,7 @@ func (t *Search) reachable() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("%s answered %s", searchHealthPath, resp.Status)
@@ -172,7 +172,7 @@ func (t *Search) request(ctx context.Context, query string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not reach the search backend at %s: %w", t.baseURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// SearXNG answers a disallowed output format, and a request its rate limiter rejects, with 403.
 	if resp.StatusCode == http.StatusForbidden {

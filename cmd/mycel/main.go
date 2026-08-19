@@ -44,7 +44,11 @@ func main() {
 		log.Fatalf("redis initialization failed: %v", err)
 		return
 	}
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Errorf("redis client close failed: %v", err)
+		}
+	}()
 
 	promptManager := prompt.NewManager(appConfig.General.Persona)
 	platforms := loadPlatforms(log, appConfig.Platform)

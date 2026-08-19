@@ -30,7 +30,7 @@ func TestReadableURL(t *testing.T) {
 // fetch must not be able to reach.
 func TestFetchRefusesLocalAddresses(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte("<html><title>secret</title><body>local service</body></html>"))
+		_, _ = w.Write([]byte("<html><title>secret</title><body>local service</body></html>"))
 	}))
 	defer srv.Close()
 

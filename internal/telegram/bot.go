@@ -171,7 +171,7 @@ func (b *Bot) downloadPhoto(ctx context.Context, sizes []tgbotapi.PhotoSize) (ll
 	if err != nil {
 		return llm.Image{}, fmt.Errorf("download: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return llm.Image{}, fmt.Errorf("download returned %s", resp.Status)

@@ -19,7 +19,7 @@ func TestSearchResults(t *testing.T) {
 		}
 		gotQuery, gotFormat = r.URL.Query().Get("q"), r.URL.Query().Get("format")
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"results":[
+		_, _ = w.Write([]byte(`{"results":[
 			{"title":"Go 1.26 release notes","url":"https://go.dev/doc/go1.26","content":"  Go 1.26   adds  something.  "},
 			{"title":"Second","url":"https://example.org/2","content":""}
 		]}`))
@@ -53,7 +53,7 @@ func TestSearchNoResults(t *testing.T) {
 		if r.URL.Path == searchHealthPath {
 			return
 		}
-		w.Write([]byte(`{"results":[]}`))
+		_, _ = w.Write([]byte(`{"results":[]}`))
 	}))
 	defer srv.Close()
 
@@ -74,7 +74,7 @@ func TestSearchWhenJSONFormatDisabled(t *testing.T) {
 			return
 		}
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("<html>Forbidden</html>"))
+		_, _ = w.Write([]byte("<html>Forbidden</html>"))
 	}))
 	defer srv.Close()
 

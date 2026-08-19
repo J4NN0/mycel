@@ -103,7 +103,7 @@ func (t *Fetch) Execute(ctx context.Context, raw json.RawMessage) (string, error
 	if err != nil {
 		return "", fmt.Errorf("could not read %s: %w", target, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		return "", fmt.Errorf("could not read %s: the site answered %s", target, resp.Status)

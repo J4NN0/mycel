@@ -82,7 +82,7 @@ func fetchCapabilities(log logger.Logger, model string) (modelCapabilities, erro
 	if err != nil {
 		return nil, fmt.Errorf("call /api/show: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("/api/show returned %s", resp.Status)

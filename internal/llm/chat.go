@@ -187,7 +187,7 @@ func streamDelta(response *schemas.BifrostChatResponse) *schemas.ChatStreamRespo
 	if len(response.Choices) == 0 || response.Choices[0].ChatStreamResponseChoice == nil {
 		return nil
 	}
-	return response.Choices[0].ChatStreamResponseChoice.Delta
+	return response.Choices[0].Delta
 }
 
 func (l *llm) runToolCalls(ctx context.Context, toolMap map[string]tool.Tool, toolCalls []schemas.ChatAssistantMessageToolCall) []schemas.ChatMessage {

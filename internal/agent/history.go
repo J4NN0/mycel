@@ -155,7 +155,7 @@ func buildSummaryInput(priorSummary string, body []llm.Message) string {
 		sb.WriteString("\n\nNEW MESSAGES SINCE THEN:\n")
 	}
 	for _, m := range body {
-		sb.WriteString(fmt.Sprintf("%s: %s\n", m.Role, m.Content))
+		fmt.Fprintf(&sb, "%s: %s\n", m.Role, m.Content)
 	}
 	return sb.String()
 }

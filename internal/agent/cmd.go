@@ -81,7 +81,7 @@ func handleHelp() string {
 	var sb strings.Builder
 	sb.WriteString("Available commands:\n")
 	for _, c := range Commands {
-		sb.WriteString(fmt.Sprintf("/%s — %s\n", c.Name, c.Description))
+		fmt.Fprintf(&sb, "/%s — %s\n", c.Name, c.Description)
 	}
 	return sb.String()
 }
