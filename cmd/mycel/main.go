@@ -61,11 +61,11 @@ func loadTools(log logger.Logger, cfg config.Tool) []tool.Tool {
 	var tools []tool.Tool
 
 	tools = append(tools, tool.NewFetchURL(log), tool.NewListFiles(log), tool.NewGrepFiles(log), tool.NewReadFile(log))
-	if webSearch := tool.NewWebSearch(log, cfg.SearxngURL); webSearch != nil {
+	if webSearch := tool.NewWebSearch(log, cfg.Searxng.URL); webSearch != nil {
 		tools = append(tools, webSearch)
 	}
 
-	if email := tool.NewEmail(log, cfg.ResendAPIKey, cfg.ResendFrom); email != nil {
+	if email := tool.NewEmail(log, cfg.Resend.APIKey, cfg.Resend.From); email != nil {
 		tools = append(tools, email)
 	}
 
@@ -75,8 +75,8 @@ func loadTools(log logger.Logger, cfg config.Tool) []tool.Tool {
 func loadPlatforms(log logger.Logger, cfg config.Platform) []agent.Platform {
 	platforms := []agent.Platform{cli.New(log, appName)}
 
-	if cfg.TelegramBotToken != "" {
-		bot, err := telegram.NewBot(cfg.TelegramBotToken, cfg.TelegramAllowedUserIDs, log)
+	if cfg.Telegram.BotToken != "" {
+		bot, err := telegram.NewBot(cfg.Telegram.BotToken, cfg.Telegram.AllowedUserIDs, log)
 		if err != nil {
 			log.Fatalf("telegram bot initialization failed: %v", err)
 			return nil

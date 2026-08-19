@@ -28,17 +28,6 @@ type General struct {
 	LogLevel           string                `envconfig:"LOG_LEVEL" default:"info"`
 }
 
-type Platform struct {
-	TelegramBotToken       string  `envconfig:"TELEGRAM_BOT_TOKEN"`
-	TelegramAllowedUserIDs []int64 `envconfig:"TELEGRAM_ALLOWED_USER_IDS"`
-}
-
-type Tool struct {
-	ResendAPIKey string `envconfig:"RESEND_API_KEY"`
-	ResendFrom   string `envconfig:"RESEND_FROM"`
-	SearxngURL   string `envconfig:"SEARXNG_URL" default:"http://localhost:8888"`
-}
-
 func ReadConfig() (Config, error) {
 	if err := loadEnvFile(); err != nil {
 		return Config{}, err
